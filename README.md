@@ -4,7 +4,7 @@ This repository is for a group project for the Data Structures and Algorithms Co
 
 ## Project Overview
 
-Working in teams of 6-7 students, we will design and develop a comprehensive **web application using Flask** that performs end-to-end analysis of a dataset.
+Working in a team of 7 students, we are designing and developing a comprehensive **web application using Flask** that performs end-to-end analysis of a dataset.
 
 ## Dataset
 
