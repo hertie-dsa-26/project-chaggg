@@ -1,5 +1,11 @@
 # Chicago Crime Analysis Project
 
+This repository is for a group project for the Data Structures and Algorithms Course taught at the Hertie School in Berlin. 
+
+## Project Overview
+
+Working in teams of 6-7 students, we will design and develop a comprehensive **web application using Flask** that performs end-to-end analysis of a dataset.
+
 ## Dataset
 
 We are using the City of Chicago's crime dataset, which provides comprehensive information on reported incidents from 2001 to present. We are using all data up to 31 December 2025:
