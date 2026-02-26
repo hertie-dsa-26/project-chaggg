@@ -8,9 +8,9 @@ Working in a team of 7 students, we are designing and developing a comprehensive
 
 ## Dataset
 
-We are using the City of Chicago's crime dataset, which provides comprehensive information on reported incidents from 2001 to present. We are using all data up to 31 December 2025:
+We are using the City of Chicago's crime dataset, which provides comprehensive information on reported incidents from 2001 to present. We are using all data up to 31 December 2025.
 
-**Dataset:** [Crimes - 2001 to Present](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data)
+[Crimes - 2001 to Present](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data)
 
 ## Development Workflow
 
