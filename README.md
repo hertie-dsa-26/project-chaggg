@@ -10,8 +10,6 @@ We are using the City of Chicago's crime dataset, which provides comprehensive i
 
 To maintain code quality and ensure collaboration, please follow this workflow:
 
-### Step-by-Step Process
-
 1. **Develop locally** – Write and test code in your personal notebooks until you're confident it works
 2. **Integrate code** – Copy your working code into the relevant script
 3. **Create a branch** – Create a new branch either:
