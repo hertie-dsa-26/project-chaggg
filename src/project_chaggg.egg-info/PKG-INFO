@@ -9,6 +9,9 @@ Requires-Dist: jupyter>=1.1.1
 Requires-Dist: matplotlib>=3.10.8
 Requires-Dist: numpy>=2.4.2
 Requires-Dist: pandas>=3.0.1
+Requires-Dist: pyarrow>=23.0.1
+Requires-Dist: requests>=2.32.5
+Requires-Dist: seaborn>=0.13.2
 
 # Chicago Crime Analysis Project
 
