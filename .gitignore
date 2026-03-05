@@ -4,3 +4,4 @@ data/
 *.json
 __pycache__/
 .venv/
+.DS_Store
