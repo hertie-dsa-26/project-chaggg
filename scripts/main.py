@@ -1,18 +1,16 @@
 """
 Run the full Chicago crime data pipeline: fetch → clean → convert to parquet.
 
-This orchestrates all steps in order:
-1. Download raw data from Chicago Data Portal (if needed)
-2. Clean the raw data
-3. Convert to parquet format for efficient loading
-
-Usage:
-    python main.py
+Usage from project root:
+    uv run python scripts/main.py --skip-download
 """
 import os
 import sys
 
-# Import pipeline modules (no 'scripts.' prefix since we're already in scripts/)
+# Add scripts directory to path so we can import the modules
+sys.path.insert(0, os.path.dirname(__file__))
+
+# Import pipeline modules
 import fetch
 import clean
 from utils import convert_to_parquet, get_data_info
@@ -79,7 +77,7 @@ def run_pipeline(skip_download=False):
     get_data_info()
     print()
     print("Next steps:")
-    print("  - Import data in your analysis with: from utils import load_data")
+    print("  - Import data in your analysis with: from scripts.utils import load_data")
     print("  - Load the data with: df = load_data()")
     print()
 

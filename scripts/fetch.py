@@ -3,7 +3,7 @@ Download Chicago crime data from the data portal.
 Saves raw data to data/raw/chicago_crimes_2001_2025_raw.csv
 
 Usage:
-    python fetch.py
+    uv run python scripts/fetch.py
 """
 import requests
 import pandas as pd

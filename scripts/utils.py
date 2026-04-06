@@ -2,14 +2,13 @@
 Utility functions for loading and working with Chicago crime data.
 
 Common usage:
-    from utils import load_data
+    from scripts.utils import load_data
     df = load_data()
 """
 import pandas as pd
 import os
 from config import *
 
-# ── Data Loading ──────────────────────────────────────────────────────────────
 def load_data(prefer_parquet=True):
     """
     Load cleaned Chicago crime data.
@@ -19,9 +18,6 @@ def load_data(prefer_parquet=True):
     
     Returns:
         pandas.DataFrame containing cleaned crime data
-    
-    Raises:
-        FileNotFoundError: If no cleaned data file exists
     """
     if prefer_parquet and os.path.exists(CLEANED_PARQUET):
         print(f"Loading from {CLEANED_PARQUET}...")
@@ -36,19 +32,8 @@ def load_data(prefer_parquet=True):
         f"Expected: {CLEANED_CSV} or {CLEANED_PARQUET}"
     )
 
-# ── Format Conversion ─────────────────────────────────────────────────────────
 def convert_to_parquet():
-    """
-    Convert cleaned CSV to parquet format for faster loading.
-    
-    Parquet files are:
-    - Smaller on disk (compressed)
-    - Faster to load
-    - Preserve data types better than CSV
-    
-    Raises:
-        FileNotFoundError: If cleaned CSV doesn't exist
-    """
+    """Convert cleaned CSV to parquet format for faster loading."""
     if os.path.exists(CLEANED_PARQUET):
         print(f"Parquet already exists: {CLEANED_PARQUET}")
         print(f"Size: {os.path.getsize(CLEANED_PARQUET) / 1024**2:.1f} MB")
@@ -69,7 +54,6 @@ def convert_to_parquet():
     print(f"Parquet size: {os.path.getsize(CLEANED_PARQUET) / 1024**2:.1f} MB")
     print(f"Space saved: {(1 - os.path.getsize(CLEANED_PARQUET) / os.path.getsize(CLEANED_CSV)) * 100:.1f}%")
 
-# ── Data Info ─────────────────────────────────────────────────────────────────
 def get_data_info():
     """Print information about available data files."""
     print("Chicago Crime Data Files:")
@@ -88,9 +72,7 @@ def get_data_info():
         else:
             print(f"✗ {name:20s} {'(not found)':>10s}  {path}")
 
-# ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    # If run directly, convert CSV to parquet
     print("=" * 60)
     print("CHICAGO CRIME DATA UTILITIES")
     print("=" * 60)
