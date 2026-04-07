@@ -19,6 +19,33 @@ The datasets are not stored in this repository. To download them, follow these s
 2. uv sync
 3. python download_data.py
 
+### Parquet distribution (recommended)
+
+To ensure everyone uses the **same snapshot** (up to 31 Dec 2025) and to speed up loading, we distribute a cleaned **Parquet** file via the shared Google Drive.
+
+- **Download raw CSV snapshot**
+
+```bash
+python download_data.py
+```
+
+- **Download cleaned Parquet snapshot** (once the Drive file id is available)
+
+```bash
+export CHAGGG_CLEANED_PARQUET_FILE_ID="<drive-file-id>"
+python download_data.py --skip-raw
+```
+
+### Creating the Parquet file (for maintainers)
+
+Once `data/cleaned/chicago_crimes_cleaned.csv` exists locally:
+
+```bash
+python scripts/convert_cleaned_csv_to_parquet.py
+```
+
+Then upload `data/cleaned/chicago_crimes_cleaned.parquet` to the shared Drive and share the **file id** (to be used as `CHAGGG_CLEANED_PARQUET_FILE_ID`).
+
 ## Development Workflow
 
 To maintain code quality and ensure collaboration, please follow this workflow:
