@@ -19,6 +19,25 @@ The datasets are not stored in this repository. To download them, follow these s
 2. uv sync
 3. python download_data.py
 
+## Codebook (cleaned dataset)
+
+The cleaned dataset is produced by running `python data/clean.py` and includes:
+
+- **Row filtering**
+  - Keeps records where `date` is in **[2001-01-01, 2026-01-01)** (i.e., up to 2025-12-31).
+  - Drops rows with missing **`latitude`** or **`longitude`**.
+
+- **Temporal features (added)**
+  - **`Year`**: year extracted from `date`
+  - **`Month`**: month extracted from `date`
+  - **`Day`**: day-of-month extracted from `date`
+  - **`Hour`**: hour extracted from `date`
+  - **`Day of Week`**: weekday name extracted from `date`
+
+- **Categorical columns (when using Parquet output)**
+  - Converts suitable columns to categorical to reduce memory usage (e.g., `primary_type`, `description`, `location_description`, `iucr`, `fbi_code`, `Day of Week`).
+  - **Note**: categories are best preserved in **Parquet** (`--format parquet`).
+
 ## Development Workflow
 
 To maintain code quality and ensure collaboration, please follow this workflow:
