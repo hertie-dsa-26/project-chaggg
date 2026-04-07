@@ -17,7 +17,7 @@ We are using the City of Chicago's crime dataset, which provides comprehensive i
 The datasets are not stored in this repository. To download them, follow these steps in your terminal:
 1. git clone <repo>
 2. uv sync
-3. python download_data.py
+3. uv run scripts/main.py
 
 ## Development Workflow
 
