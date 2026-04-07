@@ -3,10 +3,15 @@ Flask application for Chicago Crime Analysis.
 """
 from flask import Flask, render_template
 
+from .data import load_crime_data
+
 
 def create_app():
     """Create and configure the Flask application."""
     app = Flask(__name__, template_folder="templates")
+
+    # Load data at startup (keeps app bootable if file not present).
+    app.config["CRIME_DF"] = load_crime_data()
 
     @app.route("/")
     def index():
