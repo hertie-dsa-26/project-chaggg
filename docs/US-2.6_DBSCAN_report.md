@@ -1,0 +1,106 @@
+# US-2.6 — DBSCAN Spatial Clustering (Hotspot Detection) Report
+
+## Goal
+
+Implement **DBSCAN hotspot detection** to identify spatial crime clusters using **latitude/longitude** and use the learned hotspots to produce **binary predictions** (“high crime” vs “not high crime”) for a held-out test set. Per acceptance criteria, **`sklearn.cluster.DBSCAN`** is allowed and used.
+
+---
+
+## What was implemented (code locations)
+
+- **Core algorithm / utilities:** `src/algorithms/dbscan_hotspots.py`
+  - `extract_coordinates(df, ...)`: pull `(lat, lon)` into an \(n \times 2\) array
+  - `fit_dbscan(xy, eps, min_samples, ...)`: runs **sklearn DBSCAN** (defaults to `n_jobs=-1`)
+  - `cluster_boundaries_geodataframe(xy, labels, ...)`: builds **cluster boundary polygons** (convex hull per cluster, buffered for degenerate cases)
+  - `predict_hotspot_labels(xy_test, boundaries)`: predicts 1/0 using **point-in-(union of) cluster boundary** (vectorized)
+  - `grid_search_dbscan(...)`: grid search over \(\epsilon\) and `min_samples`, selects best **F1**
+  - Metrics: accuracy, precision, recall, F1
+  - Negative sampling options:
+    - `sample_negative_points_sparse_grid(...)` (**default**) — draws negatives from grid cells with ≤ `max_crimes_per_cell` crimes in test period (default 0)
+    - `sample_negative_points(...)` — draws negatives far from test-period crimes by `min_sep_deg`
+
+- **End-to-end runner:** `scripts/run_dbscan_hotspots.py`
+  - Loads only required columns: `["latitude", "longitude", "year", "date"]`
+  - Train window: **2015–2022**
+  - Test positives: crimes from **2023–2024**
+  - Test negatives: **default `sparse_grid`** (see above), configurable via CLI
+  - Saves all artifacts under `outputs/dbscan/` (or `--output-dir`)
+
+---
+
+## How to run
+
+From repo root (after cleaned data exists in `data/cleaned/`):
+
+```bash
+PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplot uv run python scripts/run_dbscan_hotspots.py
+```
+
+Useful flags:
+
+- **Speed / scale**
+  - `--max-train 45000` (default) or increase for heavier run (e.g. `120000`)
+  - `--test-crimes-max 4000` (default)
+  - `--n-neg 4000` (default)
+- **Negative sampling strategy**
+  - `--negative-strategy sparse_grid` (default)
+  - `--negative-strategy distance`
+  - `--grid-lat-bins 32 --grid-lon-bins 32`
+  - `--max-crimes-per-cell 0`
+  - `--min-sep-deg 0.015` (only for `distance`)
+- **Verbosity**
+  - `--quiet` (disables per-combo progress prints)
+
+---
+
+## Parameter tuning (acceptance criteria)
+
+The grid search tries (default):
+
+- \(\epsilon \in \{0.01, 0.05, 0.1\}\) **degrees**
+- `min_samples ∈ {10, 50, 100}`
+
+Selection criterion: **best F1** on the binary test set.
+
+---
+
+## Prediction logic (acceptance criteria)
+
+1. Fit DBSCAN on training incidents → labels: **-1 = noise**, **0+ = cluster IDs**
+2. For each cluster, construct a boundary polygon (convex hull; buffered if needed)
+3. For a test point:
+   - If the point lies **inside/touches** the union of cluster polygons → predict **1 (high crime)**
+   - Else → predict **0**
+
+---
+
+## Outputs
+
+Default output folder: `outputs/dbscan/`
+
+- `cluster_boundaries.geojson` — cluster polygons for mapping / Flask use
+- `hotspots_train.png` — visualization of clustered points + boundary outlines
+- `binary_predictions.csv` — per test point: lat, lon, `y_true`, `y_pred`
+- `metrics.json` — best params, metrics, full grid results, and `run_config` (for reproducibility)
+
+---
+
+## Notes / interpretation
+
+Binary metrics depend heavily on how **negative points** are defined.
+
+- **Default (`sparse_grid`)** negatives come from grid cells with **0** test-period crimes (configurable). This is usually more interpretable than sampling “just far from a subsample.”
+- If you want the older behavior, run with `--negative-strategy distance`.
+
+---
+
+## Acceptance criteria checklist
+
+- **DBSCAN applied to lat/lon**: yes (train coordinates from cleaned data)
+- **Parameters tuned**: yes (grid search over eps/min_samples)
+- **Clusters labeled (-1 noise, 0+ cluster)**: yes (sklearn semantics)
+- **Prediction logic**: yes (point-in-hotspot polygon)
+- **Visualization with boundaries**: yes (`hotspots_train.png`)
+- **Binary metrics**: yes (accuracy, precision, recall, F1)
+- **sklearn allowed/used**: yes (`sklearn.cluster.DBSCAN`)
+

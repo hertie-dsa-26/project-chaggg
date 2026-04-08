@@ -8,3 +8,17 @@ __pycache__/
 *.egg-info/
 *.pyc
 .venv/
+
+# Local outputs / artifacts
+outputs/
+*.log
+*.pid
+*.html
+
+# Local tooling
+.tools/
+
+# Personal notes (keep local)
+GASYA_NOTLAR.md
+PR_MEETING_SUMMARY.md
+PR_MEETING_SUMMARY.html
