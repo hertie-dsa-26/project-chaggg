@@ -22,3 +22,6 @@ outputs/
 GASYA_NOTLAR.md
 PR_MEETING_SUMMARY.md
 PR_MEETING_SUMMARY.html
+
+# Local / experimental scripts not part of current tasks
+scripts/download_chicago_crimes.py
