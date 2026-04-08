@@ -111,6 +111,28 @@ Default output folder: `outputs/dbscan/`
 - `binary_predictions.csv` — per test point: lat, lon, `y_true`, `y_pred`
 - `metrics.json` — best params, metrics, full grid results, and `run_config` (for reproducibility)
 
+## Flask integration (interactive visualization)
+
+To support the project requirement for **interactive visualizations**, hotspot
+boundaries can be explored in the Flask app:
+
+- **Page:** `/viz/hotspots`
+  - Leaflet map + GeoJSON overlay
+  - Dropdown allows switching between **meters** vs **degrees** variants
+- **API:** `/api/hotspots?variant=meters|degrees`
+  - Serves the corresponding GeoJSON
+
+Static GeoJSON variants committed for the demo:
+
+- `src/flask_app/static/geo/hotspots_meters.geojson`
+- `src/flask_app/static/geo/hotspots_degrees.geojson`
+
+Run the app from repo root:
+
+```bash
+MPLCONFIGDIR=/tmp/matplot uv run python run_app.py
+```
+
 ---
 
 ## Notes / interpretation
