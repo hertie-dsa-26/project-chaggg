@@ -14,6 +14,7 @@ for final reporting.
 from __future__ import annotations
 
 import argparse
+import shutil
 import sys
 from pathlib import Path
 
@@ -121,6 +122,11 @@ def main() -> None:
         default=None,
         help="Defaults to <repo>/outputs/dbscan",
     )
+    parser.add_argument(
+        "--export-flask-static",
+        action="store_true",
+        help="Copy resulting cluster_boundaries.geojson into Flask static/geo for demo.",
+    )
     args = parser.parse_args()
     out_dir = args.output_dir or (project_root / "outputs" / "dbscan")
 
@@ -225,7 +231,17 @@ def main() -> None:
     y_pred = predict_hotspot_labels(xy_test, result.boundaries)
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    save_cluster_boundaries(result.boundaries, out_dir / "cluster_boundaries.geojson")
+    boundaries_path = out_dir / "cluster_boundaries.geojson"
+    save_cluster_boundaries(result.boundaries, boundaries_path)
+
+    if args.export_flask_static:
+        flask_geo_dir = (
+            project_root / "src" / "flask_app" / "static" / "geo" / "generated"
+        )
+        flask_geo_dir.mkdir(parents=True, exist_ok=True)
+        target = flask_geo_dir / f"hotspots_{args.space}.geojson"
+        shutil.copyfile(boundaries_path, target)
+        print(f"Exported Flask static GeoJSON: {target}", flush=True)
 
     preds_df = pd.DataFrame(
         {

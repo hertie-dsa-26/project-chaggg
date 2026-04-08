@@ -26,3 +26,6 @@ PR_MEETING_SUMMARY.html
 
 # Local / experimental scripts not part of current tasks
 scripts/download_chicago_crimes.py
+
+# Generated Flask demo artifacts (produced by run_dbscan_hotspots.py --export-flask-static)
+src/flask_app/static/geo/generated/

@@ -12,9 +12,10 @@ def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="static")
 
     geo_dir = Path(__file__).resolve().parent / "static" / "geo"
+    generated_dir = geo_dir / "generated"
     hotspot_variants = {
-        "meters": geo_dir / "hotspots_meters.geojson",
-        "degrees": geo_dir / "hotspots_degrees.geojson",
+        "meters": (generated_dir / "hotspots_meters.geojson", geo_dir / "hotspots_meters.geojson"),
+        "degrees": (generated_dir / "hotspots_degrees.geojson", geo_dir / "hotspots_degrees.geojson"),
     }
 
     @app.route("/")
@@ -36,8 +37,8 @@ def create_app():
     @app.route("/api/hotspots")
     def api_hotspots():
         variant = request.args.get("variant", "meters").strip().lower()
-        path = hotspot_variants.get(variant)
-        if path is None:
+        paths = hotspot_variants.get(variant)
+        if paths is None:
             return jsonify(
                 {
                     "error": "unknown_variant",
@@ -45,11 +46,16 @@ def create_app():
                     "available": sorted(hotspot_variants.keys()),
                 }
             ), 400
-        if not path.exists():
+        path = None
+        for p in paths:
+            if p.exists():
+                path = p
+                break
+        if path is None:
             return jsonify(
                 {
                     "error": "missing_geojson",
-                    "message": f"GeoJSON not found: {path.name}",
+                    "message": f"GeoJSON not found for variant: {variant}",
                 }
             ), 404
         with path.open("r", encoding="utf-8") as f:
