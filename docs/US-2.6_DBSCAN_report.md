@@ -10,6 +10,8 @@ Implement **DBSCAN hotspot detection** to identify spatial crime clusters using 
 
 - **Core algorithm / utilities:** `src/algorithms/dbscan_hotspots.py`
   - `extract_coordinates(df, ...)`: pull `(lat, lon)` into an \(n \times 2\) array
+  - `project_latlon_to_meters(latlon, dst_crs="EPSG:32616")`: project to planar meters for meaningful eps
+  - `k_distance_curve(xy, k, ...)` + `plot_k_distance_curve(...)`: generate eps “elbow” evidence
   - `fit_dbscan(xy, eps, min_samples, ...)`: runs **sklearn DBSCAN** (defaults to `n_jobs=-1`)
   - `cluster_boundaries_geodataframe(xy, labels, ...)`: builds **cluster boundary polygons** (convex hull per cluster, buffered for degenerate cases)
   - `predict_hotspot_labels(xy_test, boundaries)`: predicts 1/0 using **point-in-(union of) cluster boundary** (vectorized)
@@ -42,6 +44,9 @@ Useful flags:
   - `--max-train 45000` (default) or increase for heavier run (e.g. `120000`)
   - `--test-crimes-max 4000` (default)
   - `--n-neg 4000` (default)
+- **Clustering space**
+  - `--space degrees` (default; eps in degrees)
+  - `--space meters` (project to UTM16N; eps in meters)
 - **Negative sampling strategy**
   - `--negative-strategy sparse_grid` (default)
   - `--negative-strategy distance`
@@ -50,17 +55,40 @@ Useful flags:
   - `--min-sep-deg 0.015` (only for `distance`)
 - **Verbosity**
   - `--quiet` (disables per-combo progress prints)
+- **Eps justification helper**
+  - `--k-distance-plot` (saves `k_distance_plot.png`)
+  - `--k-distance-k 50` (k for curve; often equals `min_samples`)
 
 ---
 
 ## Parameter tuning (acceptance criteria)
 
-The grid search tries (default):
+The grid search tries (default, **degree space**):
 
 - \(\epsilon \in \{0.01, 0.05, 0.1\}\) **degrees**
 - `min_samples ∈ {10, 50, 100}`
 
 Selection criterion: **best F1** on the binary test set.
+
+### CV-quality improvement: meter-space DBSCAN (optional)
+
+Because lat/lon degrees are not a constant physical distance, the runner supports
+clustering in **projected meters** (Chicago: **UTM16N `EPSG:32616`**) and still
+exports boundaries in WGS84 for web mapping.
+
+- Enable via: `--space meters`
+- Meter eps grid used in this mode: `eps ∈ {500, 1500, 3000}` (meters)
+
+### CV-quality improvement: k-distance (elbow) plot for eps selection (optional)
+
+To justify an eps choice more rigorously, the runner can generate a
+**k-distance curve**: for each point, compute the distance to its **k-th nearest
+neighbor**, then sort these distances. The “elbow” region is a common heuristic
+for selecting DBSCAN’s `eps`.
+
+- Enable via: `--k-distance-plot`
+- Choose k via: `--k-distance-k` (often set equal to `min_samples`)
+- Output: `k_distance_plot.png` saved next to other artifacts in the output dir
 
 ---
 

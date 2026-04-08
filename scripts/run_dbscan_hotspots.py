@@ -30,8 +30,11 @@ from config import VALID_LAT_RANGE, VALID_LON_RANGE
 from src.algorithms.dbscan_hotspots import (
     extract_coordinates,
     grid_search_dbscan,
+    k_distance_curve,
     plot_hotspots,
+    plot_k_distance_curve,
     predict_hotspot_labels,
+    project_latlon_to_meters,
     sample_negative_points,
     sample_negative_points_sparse_grid,
     save_cluster_boundaries,
@@ -42,6 +45,23 @@ from utils import filter_valid_coordinates, load_data
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="DBSCAN crime hotspots (sklearn)")
+    parser.add_argument(
+        "--space",
+        choices=("degrees", "meters"),
+        default="degrees",
+        help="Run DBSCAN in lat/lon degrees (default) or projected meters (UTM16N).",
+    )
+    parser.add_argument(
+        "--k-distance-plot",
+        action="store_true",
+        help="Save a k-distance curve plot (helps justify eps selection).",
+    )
+    parser.add_argument(
+        "--k-distance-k",
+        type=int,
+        default=50,
+        help="k for k-distance curve (often equals min_samples).",
+    )
     parser.add_argument(
         "--max-train",
         type=int,
@@ -118,20 +138,20 @@ def main() -> None:
     train_df = df[df["year"].between(2015, 2022)]
     test_crimes_df = df[df["year"].between(2023, 2024)]
 
-    train_xy = extract_coordinates(train_df)
-    print(f"Train window 2015–2022: {len(train_xy):,} points", flush=True)
-    if len(train_xy) > args.max_train:
+    train_latlon = extract_coordinates(train_df)
+    print(f"Train window 2015–2022: {len(train_latlon):,} points", flush=True)
+    if len(train_latlon) > args.max_train:
         rng = np.random.default_rng(42)
-        idx = rng.choice(len(train_xy), size=args.max_train, replace=False)
-        train_xy = train_xy[idx]
+        idx = rng.choice(len(train_latlon), size=args.max_train, replace=False)
+        train_latlon = train_latlon[idx]
         print(f"  subsampled to {args.max_train:,} for DBSCAN speed", flush=True)
 
-    test_period_xy_full = extract_coordinates(test_crimes_df)
-    crime_test_xy = test_period_xy_full
-    if len(crime_test_xy) > args.test_crimes_max:
+    test_period_latlon_full = extract_coordinates(test_crimes_df)
+    crime_test_latlon = test_period_latlon_full
+    if len(crime_test_latlon) > args.test_crimes_max:
         rng = np.random.default_rng(43)
-        idx = rng.choice(len(crime_test_xy), size=args.test_crimes_max, replace=False)
-        crime_test_xy = crime_test_xy[idx]
+        idx = rng.choice(len(crime_test_latlon), size=args.test_crimes_max, replace=False)
+        crime_test_latlon = crime_test_latlon[idx]
 
     if args.negative_strategy == "sparse_grid":
         print(
@@ -140,7 +160,7 @@ def main() -> None:
             flush=True,
         )
         neg_xy = sample_negative_points_sparse_grid(
-            test_period_xy_full,
+            test_period_latlon_full,
             n_sample=args.n_neg,
             lat_range=VALID_LAT_RANGE,
             lon_range=VALID_LON_RANGE,
@@ -152,7 +172,7 @@ def main() -> None:
     else:
         print("Negatives: distance from full test-period crime set…", flush=True)
         neg_xy = sample_negative_points(
-            test_period_xy_full,
+            test_period_latlon_full,
             n_sample=args.n_neg,
             lat_range=VALID_LAT_RANGE,
             lon_range=VALID_LON_RANGE,
@@ -160,17 +180,47 @@ def main() -> None:
             random_state=44,
         )
 
-    xy_test = np.vstack([crime_test_xy, neg_xy])
+    xy_test = np.vstack([crime_test_latlon, neg_xy])
     y_test = np.concatenate(
         [
-            np.ones(len(crime_test_xy), dtype=np.int64),
+            np.ones(len(crime_test_latlon), dtype=np.int64),
             np.zeros(len(neg_xy), dtype=np.int64),
         ]
     )
 
     print("Parameter grid (9 combos) — first DBSCAN fit may take 1–3 min…", flush=True)
+    if args.space == "degrees":
+        train_xy_for_fit = train_latlon
+        train_latlon_for_bounds = None
+        eps_values = [0.01, 0.05, 0.1]
+    else:
+        # Cluster in meters for more meaningful eps; keep boundaries in WGS84 for mapping.
+        print("Projecting training points to meters (UTM16N) for DBSCAN…", flush=True)
+        train_xy_for_fit = project_latlon_to_meters(train_latlon, dst_crs="EPSG:32616")
+        train_latlon_for_bounds = train_latlon
+        eps_values = [500, 1500, 3000]
+
+    if args.k_distance_plot:
+        print(
+            f"Computing k-distance curve (k={args.k_distance_k})…",
+            flush=True,
+        )
+        curve = k_distance_curve(train_xy_for_fit, k=args.k_distance_k)
+        unit = "meters" if args.space == "meters" else "degrees"
+        plot_k_distance_curve(
+            curve,
+            out_dir / "k_distance_plot.png",
+            title=f"k-distance curve (k={args.k_distance_k}, space={args.space}, unit={unit})",
+        )
+
     result = grid_search_dbscan(
-        train_xy, xy_test, y_test, verbose=not args.quiet
+        train_xy_for_fit,
+        train_latlon_for_bounds,
+        xy_test,
+        y_test,
+        eps_values=eps_values,
+        min_samples_values=[10, 50, 100],
+        verbose=not args.quiet,
     )
     y_pred = predict_hotspot_labels(xy_test, result.boundaries)
 
@@ -196,6 +246,9 @@ def main() -> None:
         "test_label_years_for_crimes": "2023–2024",
         "run_config": {
             "columns_loaded": ["latitude", "longitude", "year", "date"],
+            "space": args.space,
+            "k_distance_plot": bool(args.k_distance_plot),
+            "k_distance_k": int(args.k_distance_k),
             "negative_strategy": args.negative_strategy,
             "grid_lat_bins": args.grid_lat_bins,
             "grid_lon_bins": args.grid_lon_bins,
@@ -220,7 +273,7 @@ def main() -> None:
     save_metrics_json(metrics_payload, out_dir / "metrics.json")
 
     fig = plot_hotspots(
-        train_xy,
+        train_latlon,
         result.train_labels,
         result.boundaries,
         out_path=out_dir / "hotspots_train.png",

@@ -23,10 +23,12 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pyproj import Transformer
 from scipy.spatial import cKDTree
 from shapely.geometry import MultiPoint, Point, mapping
 from shapely.ops import unary_union
 from sklearn.cluster import DBSCAN
+from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -53,6 +55,71 @@ def extract_coordinates(
     lat = d[lat_col].to_numpy(dtype=float)
     lon = d[lon_col].to_numpy(dtype=float)
     return np.column_stack([lat, lon])
+
+
+def project_latlon_to_meters(
+    latlon: np.ndarray,
+    dst_crs: str = "EPSG:32616",
+) -> np.ndarray:
+    """
+    Project WGS84 (lat, lon) into planar meters.
+
+    Returns (n, 2) array (x_m, y_m).
+    Default CRS is UTM Zone 16N, reasonable for Chicago.
+    """
+    if latlon.ndim != 2 or latlon.shape[1] != 2:
+        raise ValueError("latlon must be (n, 2) with [lat, lon]")
+    transformer = Transformer.from_crs("EPSG:4326", dst_crs, always_xy=True)
+    lon = latlon[:, 1].astype(float, copy=False)
+    lat = latlon[:, 0].astype(float, copy=False)
+    x, y = transformer.transform(lon, lat)
+    return np.column_stack([np.asarray(x, dtype=float), np.asarray(y, dtype=float)])
+
+
+def k_distance_curve(
+    xy: np.ndarray,
+    k: int,
+    max_points: int = 60_000,
+    random_state: int = 42,
+) -> np.ndarray:
+    """
+    Compute the k-distance curve for DBSCAN eps selection.
+
+    Returns sorted distances to the k-th nearest neighbor (ascending).
+    For large n, subsamples to max_points for speed.
+    """
+    if k < 1:
+        raise ValueError("k must be >= 1")
+    if xy.ndim != 2 or xy.shape[1] != 2:
+        raise ValueError("xy must be (n, 2)")
+    x = xy
+    if len(x) > max_points:
+        rng = np.random.default_rng(random_state)
+        idx = rng.choice(len(x), size=max_points, replace=False)
+        x = x[idx]
+    nn = NearestNeighbors(n_neighbors=k, algorithm="auto", n_jobs=-1)
+    nn.fit(x)
+    dists, _ = nn.kneighbors(x, return_distance=True)
+    kth = dists[:, -1]
+    return np.sort(kth)
+
+
+def plot_k_distance_curve(
+    distances_sorted: np.ndarray,
+    out_path: Path,
+    title: str,
+) -> None:
+    """Save a k-distance elbow plot to disk."""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(distances_sorted, linewidth=1.2)
+    ax.set_xlabel("points (sorted)")
+    ax.set_ylabel("distance to k-th neighbor")
+    ax.set_title(title)
+    ax.grid(True, alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
 
 def fit_dbscan(
@@ -279,6 +346,7 @@ class TuningResult:
 
 def grid_search_dbscan(
     train_xy: np.ndarray,
+    train_latlon_for_boundaries: np.ndarray | None,
     xy_test: np.ndarray,
     y_test: np.ndarray,
     eps_values: list[float] | None = None,
@@ -303,8 +371,11 @@ def grid_search_dbscan(
             if verbose:
                 print(f"  DBSCAN fit… eps={eps} min_samples={ms}", flush=True)
             _, labels = fit_dbscan(train_xy, eps=eps, min_samples=ms)
+            boundary_points = train_latlon_for_boundaries
+            if boundary_points is None:
+                boundary_points = train_xy
             bounds = cluster_boundaries_geodataframe(
-                train_xy, labels, buffer_deg=hull_buffer_deg
+                boundary_points, labels, buffer_deg=hull_buffer_deg
             )
             if verbose:
                 print(f"    predict {len(xy_test):,} test points…", flush=True)
