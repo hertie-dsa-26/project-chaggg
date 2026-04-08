@@ -13,7 +13,8 @@ __pycache__/
 outputs/
 *.log
 *.pid
-*.html
+# Avoid ignoring all HTML since Flask templates are HTML.
+# Keep ignoring specific generated HTML files explicitly instead.
 
 # Local tooling
 .tools/
