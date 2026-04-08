@@ -120,6 +120,19 @@ Binary metrics depend heavily on how **negative points** are defined.
 - **Default (`sparse_grid`)** negatives come from grid cells with **0** test-period crimes (configurable). This is usually more interpretable than sampling “just far from a subsample.”
 - If you want the older behavior, run with `--negative-strategy distance`.
 
+### Comparison snapshot (degrees vs meters)
+
+Same evaluation setup (train cap 20,000; 1,500 positives + 1,500 negatives; `sparse_grid`; k-distance plot enabled):
+
+| Space | Best eps | Best min_samples | Accuracy | Precision | Recall | F1 |
+|------:|---------:|-----------------:|---------:|----------:|-------:|---:|
+| degrees | 0.01 | 50 | 0.9760 | 0.9824 | 0.9693 | 0.9758 |
+| meters (UTM16N) | 500 | 10 | 0.9787 | 0.9742 | 0.9833 | 0.9788 |
+
+Artifacts were written to:
+- `outputs/dbscan_compare_deg/` (includes `k_distance_plot.png`)
+- `outputs/dbscan_compare_meters/` (includes `k_distance_plot.png`)
+
 ---
 
 ## Acceptance criteria checklist
