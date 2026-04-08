@@ -32,9 +32,13 @@ def load_data(prefer_parquet=True):
         f"Expected: {CLEANED_CSV} or {CLEANED_PARQUET}"
     )
 
-def convert_to_parquet():
-    """Convert cleaned CSV to parquet format for faster loading."""
-    if os.path.exists(CLEANED_PARQUET):
+def convert_to_parquet(force=False):
+    """Convert cleaned CSV to parquet format for faster loading.
+    
+    Args:
+        force: If True, regenerate parquet even if it already exists
+    """
+    if os.path.exists(CLEANED_PARQUET) and not force:
         print(f"Parquet already exists: {CLEANED_PARQUET}")
         print(f"Size: {os.path.getsize(CLEANED_PARQUET) / 1024**2:.1f} MB")
         return
