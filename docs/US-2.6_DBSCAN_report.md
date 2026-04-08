@@ -133,6 +133,19 @@ Artifacts were written to:
 - `outputs/dbscan_compare_deg/` (includes `k_distance_plot.png`)
 - `outputs/dbscan_compare_meters/` (includes `k_distance_plot.png`)
 
+### Robustness check: harder negatives (sparse_grid)
+
+We also varied `max_crimes_per_cell` to draw negatives from grid cells that are
+**not strictly empty** in the test period. This stress-tests whether hotspot
+polygons stay meaningful when negatives come from “almost empty” areas.
+
+Same setup as above (meters; train cap 20,000; 1,500 positives + 1,500 negatives; k-distance plot enabled):
+
+| max_crimes_per_cell | Best eps (m) | Best min_samples | Accuracy | Precision | Recall | F1 | Artifacts |
+|--------------------:|-------------:|-----------------:|---------:|----------:|-------:|---:|----------|
+| 1 | 500 | 10 | 0.9780 | 0.9730 | 0.9833 | 0.9781 | `outputs/dbscan_hardneg_cell1/` |
+| 2 | 500 | 10 | 0.9783 | 0.9736 | 0.9833 | 0.9784 | `outputs/dbscan_hardneg_cell2/` |
+
 ---
 
 ## Acceptance criteria checklist
