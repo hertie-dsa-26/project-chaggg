@@ -7,7 +7,10 @@ Common usage:
 """
 import pandas as pd
 import os
-from config import *
+try:
+    from .config import *
+except ImportError:
+    from config import *
 
 def load_data(prefer_parquet=True):
     """
