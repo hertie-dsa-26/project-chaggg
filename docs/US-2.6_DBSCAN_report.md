@@ -133,6 +133,25 @@ Run the app from repo root:
 MPLCONFIGDIR=/tmp/matplot uv run python run_app.py
 ```
 
+### Keeping the Flask map in sync (export helper)
+
+To update what the Flask map displays after re-running DBSCAN, you can export the
+latest boundary GeoJSON into a generated static location:
+
+```bash
+PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplot uv run python scripts/run_dbscan_hotspots.py \
+  --space meters \
+  --export-flask-static
+```
+
+This writes to:
+
+- `src/flask_app/static/geo/generated/hotspots_meters.geojson`
+
+The Flask API `/api/hotspots` prefers the **generated** files when present, and
+falls back to the committed demo GeoJSON otherwise. The generated folder is
+ignored by git.
+
 ---
 
 ## Notes / interpretation
