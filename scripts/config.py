@@ -32,7 +32,7 @@ EXPECTED_COLUMNS = [
 # ── Data Filters ──────────────────────────────────────────────────────────────
 VALID_LAT_RANGE = (41.6, 42.1)
 VALID_LON_RANGE = (-87.9, -87.5)
-YEAR_RANGE = (2001, 2025)
+YEAR_RANGE = (2002, 2025)
 
 # ── Create Directories ────────────────────────────────────────────────────────
 for directory in [DATA_DIR, RAW_DIR, CLEANED_DIR, BATCH_DIR]:
