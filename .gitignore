@@ -4,6 +4,7 @@ __pycache__/
 *.pyd
 *.so
 *.egg-info/
+*.pyc
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -31,8 +32,9 @@ instance/
 .tools/
 
 # Data artifacts (large / local-only)
+data/
 data/**/*.csv
 data/**/*.parquet
+data/**/*.json
 data/**/*.pkl
 data/**/*.pickle
-
