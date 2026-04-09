@@ -13,6 +13,8 @@ __pycache__/
 outputs/
 *.log
 *.pid
+.coverage
+htmlcov/
 # Avoid ignoring all HTML since Flask templates are HTML.
 # Keep ignoring specific generated HTML files explicitly instead.
 

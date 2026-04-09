@@ -29,6 +29,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "coverage>=7.13.5",
     "ruff>=0.15.10",
 ]
 
@@ -52,3 +53,14 @@ ignore = [
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = [
+    "**/dbscan_hotspots.py",
+]
+
+[tool.coverage.report]
+fail_under = 78
+show_missing = true

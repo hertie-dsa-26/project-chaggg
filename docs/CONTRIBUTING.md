@@ -18,6 +18,14 @@ uv run ruff format --check src tests
 CHAGGG_SKIP_DATA_LOAD=1 uv run python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
+**Coverage** (`fail_under` ve `omit` için `pyproject.toml` → `[tool.coverage.*]`):
+
+```bash
+CHAGGG_SKIP_DATA_LOAD=1 uv run coverage erase
+uv run coverage run -m unittest discover -s tests -p "test_*.py" -q
+uv run coverage report
+```
+
 Lint/format şu an **`src/` ve `tests/`** ile sınırlı; `scripts/` içindeki eski `from config import *` kalıpları ayrı bir temizlik PR’ında genişletilebilir.
 
 KNN veya Flask KNN sayfası için (opsiyonel artefakt):

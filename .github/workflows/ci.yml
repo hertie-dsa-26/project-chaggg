@@ -36,5 +36,8 @@ jobs:
       - name: Ruff format
         run: uv run ruff format --check src tests
 
-      - name: Unit tests
-        run: uv run python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Unit tests with coverage
+        run: |
+          uv run coverage erase
+          uv run coverage run -m unittest discover -s tests -p "test_*.py" -v
+          uv run coverage report

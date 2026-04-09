@@ -19,6 +19,14 @@ uv run ruff format --check src tests
 CHAGGG_SKIP_DATA_LOAD=1 uv run python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
+Coverage (`src/`, DBSCAN modülü rapor dışı; eşik `pyproject.toml` içinde):
+
+```bash
+CHAGGG_SKIP_DATA_LOAD=1 uv run coverage erase
+uv run coverage run -m unittest discover -s tests -p "test_*.py" -q
+uv run coverage report
+```
+
 Pull requests run the same tests in GitHub Actions (see `.github/workflows/ci.yml`).
 
 ## Project Overview
