@@ -6,10 +6,15 @@ from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
+from .data import load_crime_data
+
 
 def create_app():
     """Create and configure the Flask application."""
     app = Flask(__name__, template_folder="templates", static_folder="static")
+
+    # Load dataset once at startup (keeps routes simple).
+    app.config["CRIME_DF"] = load_crime_data()
 
     geo_dir = Path(__file__).resolve().parent / "static" / "geo"
     generated_dir = geo_dir / "generated"
@@ -33,6 +38,18 @@ def create_app():
     @app.route("/viz/hotspots")
     def viz_hotspots():
         return render_template("hotspots.html")
+
+    @app.route("/dashboards/time")
+    def dashboard_time():
+        return render_template("dashboards/time.html", rows=len(app.config["CRIME_DF"]))
+
+    @app.route("/dashboards/space")
+    def dashboard_space():
+        return render_template("dashboards/space.html", rows=len(app.config["CRIME_DF"]))
+
+    @app.route("/dashboards/types")
+    def dashboard_types():
+        return render_template("dashboards/types.html", rows=len(app.config["CRIME_DF"]))
 
     @app.route("/api/hotspots")
     def api_hotspots():

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from .distance import SpaceTimeScaler
 from .kdtree import KDNode, build_kdtree, knn_query
 
 
@@ -18,12 +19,14 @@ class SpatiotemporalKNN:
     """
 
     k: int = 10
-    time_scale: float = 0.0  # placeholder (meters-per-month or degrees-per-month)
+    space: str = "degrees"  # "degrees" | "meters"
+    time_scale: float = 0.0  # meters-per-month (if meters) or degrees-per-month (if degrees)
     eps: float = 1e-9
 
     _root: KDNode | None = None
     _X: np.ndarray | None = None
     _y: np.ndarray | None = None
+    _scaler: SpaceTimeScaler | None = None
 
     def train(self, data: pd.DataFrame) -> None:
         """
@@ -39,7 +42,8 @@ class SpatiotemporalKNN:
         t = data["month_index"].to_numpy(dtype=float)
         y = data["crime_count"].to_numpy(dtype=float)
 
-        X = np.column_stack([lat, lon, self.time_scale * t])
+        self._scaler = SpaceTimeScaler(space=self.space, time_scale=self.time_scale)
+        X = self._scaler.transform(lat=lat, lon=lon, month_index=t)
         self._X = X
         self._y = y
         self._root = build_kdtree(X)
@@ -51,9 +55,11 @@ class SpatiotemporalKNN:
         """
         if self._root is None or self._X is None or self._y is None:
             raise RuntimeError("Model not trained. Call train(data) first.")
+        if self._scaler is None:
+            raise RuntimeError("Internal error: scaler missing. Call train(data) first.")
 
         lat, lon = float(location[0]), float(location[1])
-        q = np.array([lat, lon, self.time_scale * float(time)], dtype=float)
+        q = self._scaler.transform_one(lat=lat, lon=lon, month_index=float(time))
         neighbors = knn_query(self._root, q, k=self.k)
         if not neighbors:
             return float("nan")

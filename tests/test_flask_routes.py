@@ -1,10 +1,13 @@
 import unittest
+import os
 
 from src.flask_app import create_app
 
 
 class TestFlaskRoutes(unittest.TestCase):
     def setUp(self):
+        # Keep tests fast and independent of large local datasets.
+        os.environ["CHAGGG_SKIP_DATA_LOAD"] = "1"
         app = create_app()
         app.config.update(TESTING=True)
         self.client = app.test_client()
