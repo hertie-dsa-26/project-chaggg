@@ -28,13 +28,13 @@ from scipy.spatial import cKDTree
 from shapely.geometry import MultiPoint, Point, mapping
 from shapely.ops import unary_union
 from sklearn.cluster import DBSCAN
-from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
     precision_score,
     recall_score,
 )
+from sklearn.neighbors import NearestNeighbors
 
 
 def extract_coordinates(
@@ -290,14 +290,10 @@ def sample_negative_points_sparse_grid(
     counts = np.zeros((n_lat_bins, n_lon_bins), dtype=np.int32)
     if len(crime_xy_all_test_period) > 0:
         ilat = np.floor(
-            (crime_xy_all_test_period[:, 0] - lat_min)
-            / (lat_max - lat_min + 1e-12)
-            * n_lat_bins
+            (crime_xy_all_test_period[:, 0] - lat_min) / (lat_max - lat_min + 1e-12) * n_lat_bins
         ).astype(np.int32)
         ilon = np.floor(
-            (crime_xy_all_test_period[:, 1] - lon_min)
-            / (lon_max - lon_min + 1e-12)
-            * n_lon_bins
+            (crime_xy_all_test_period[:, 1] - lon_min) / (lon_max - lon_min + 1e-12) * n_lon_bins
         ).astype(np.int32)
         ilat = np.clip(ilat, 0, n_lat_bins - 1)
         ilon = np.clip(ilon, 0, n_lon_bins - 1)
@@ -382,7 +378,10 @@ def grid_search_dbscan(
             y_pred = predict_hotspot_labels(xy_test, bounds)
             m = classification_metrics(y_test, y_pred)
             if verbose:
-                print(f"    f1={m['f1']:.4f} clusters={int(len(set(labels)) - (1 if -1 in set(labels) else 0))}", flush=True)
+                print(
+                    f"    f1={m['f1']:.4f} clusters={int(len(set(labels)) - (1 if -1 in set(labels) else 0))}",
+                    flush=True,
+                )
             rows.append(
                 {
                     "eps": eps,

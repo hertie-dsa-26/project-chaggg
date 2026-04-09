@@ -58,7 +58,7 @@ class TestSpatiotemporalKNN(unittest.TestCase):
             }
         )
         k = 5
-        pts = list(zip(df["lat"], df["lon"], df["month_index"]))
+        pts = list(zip(df["lat"], df["lon"], df["month_index"], strict=True))
         m_kd = SpatiotemporalKNN(k=k, space="degrees", time_scale=0.05, use_bruteforce=False)
         m_kd.train(df)
         m_bf = SpatiotemporalKNN(k=k, space="degrees", time_scale=0.05, use_bruteforce=True)
@@ -71,4 +71,3 @@ class TestSpatiotemporalKNN(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

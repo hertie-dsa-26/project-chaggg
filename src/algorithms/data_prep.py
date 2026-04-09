@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import numpy as np
 import pandas as pd
 
 
@@ -67,4 +66,3 @@ def split_train_test_by_year(
     train = df[year.between(train_years[0], train_years[1])].reset_index(drop=True)
     test = df[year.between(test_years[0], test_years[1])].reset_index(drop=True)
     return train, test
-

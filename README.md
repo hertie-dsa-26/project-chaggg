@@ -13,7 +13,9 @@ This repository is for a group project for the Data Structures and Algorithms Co
 ## Testing
 
 ```bash
-uv sync
+uv sync --all-groups
+uv run ruff check src tests
+uv run ruff format --check src tests
 CHAGGG_SKIP_DATA_LOAD=1 uv run python -m unittest discover -s tests -p "test_*.py" -v
 ```
 

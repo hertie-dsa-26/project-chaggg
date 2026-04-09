@@ -10,9 +10,7 @@ KNN_DIR = PROJECT_ROOT / "outputs" / "knn"
 
 
 def knn_artifacts_present() -> bool:
-    return (
-        KNN_DIR / "forecast_predictions_k10.csv"
-    ).is_file() and (
+    return (KNN_DIR / "forecast_predictions_k10.csv").is_file() and (
         KNN_DIR / "monthly_ca_train_2015_2022.parquet"
     ).is_file()
 

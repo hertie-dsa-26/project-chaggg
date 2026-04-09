@@ -12,9 +12,13 @@ Bu depo için beklenen profesyonel iş akışı. **Exceeds** seviyesinde özelli
 ## Yerel kontroller (PR öncesi)
 
 ```bash
-uv sync
+uv sync --all-groups
+uv run ruff check src tests
+uv run ruff format --check src tests
 CHAGGG_SKIP_DATA_LOAD=1 uv run python -m unittest discover -s tests -p "test_*.py" -v
 ```
+
+Lint/format şu an **`src/` ve `tests/`** ile sınırlı; `scripts/` içindeki eski `from config import *` kalıpları ayrı bir temizlik PR’ında genişletilebilir.
 
 KNN veya Flask KNN sayfası için (opsiyonel artefakt):
 

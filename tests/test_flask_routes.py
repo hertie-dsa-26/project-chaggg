@@ -1,11 +1,10 @@
-import unittest
 import os
+import unittest
 from pathlib import Path
 
 import pandas as pd
 
 from src.flask_app import create_app, knn_paths
-
 
 KNN_OUTPUTS_READY = knn_paths.knn_artifacts_present()
 
@@ -35,7 +34,12 @@ class TestFlaskRoutes(unittest.TestCase):
 
     @unittest.skipUnless(KNN_OUTPUTS_READY, "KNN parquet/CSV outputs not built")
     def test_api_knn_predict_json(self):
-        test_path = Path(__file__).resolve().parents[1] / "outputs" / "knn" / "monthly_ca_test_2023_2024.parquet"
+        test_path = (
+            Path(__file__).resolve().parents[1]
+            / "outputs"
+            / "knn"
+            / "monthly_ca_test_2023_2024.parquet"
+        )
         sample = pd.read_parquet(test_path, columns=["community_area", "month"])
         ca = float(sample.iloc[0]["community_area"])
         month = pd.Timestamp(sample.iloc[0]["month"]).strftime("%Y-%m-%d")
@@ -50,4 +54,3 @@ class TestFlaskRoutes(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

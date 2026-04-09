@@ -14,7 +14,6 @@ if str(scripts_dir) not in sys.path:
 
 from utils import load_data  # noqa: E402
 
-
 DEFAULT_COLUMNS = [
     "ID",
     "Date",
@@ -33,7 +32,7 @@ DEFAULT_COLUMNS = [
 def load_crime_data() -> pd.DataFrame:
     """
     Load the Chicago crime dataset for the web app.
-    
+
     Uses the cleaned data from the preprocessing pipeline.
     Falls back to empty DataFrame if data is not available.
     """

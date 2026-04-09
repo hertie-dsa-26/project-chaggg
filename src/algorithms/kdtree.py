@@ -10,11 +10,13 @@ class KDNode:
     point: np.ndarray  # shape (k,)
     index: int
     axis: int
-    left: "KDNode | None" = None
-    right: "KDNode | None" = None
+    left: KDNode | None = None
+    right: KDNode | None = None
 
 
-def build_kdtree(points: np.ndarray, indices: np.ndarray | None = None, depth: int = 0) -> KDNode | None:
+def build_kdtree(
+    points: np.ndarray, indices: np.ndarray | None = None, depth: int = 0
+) -> KDNode | None:
     """
     Build a KD-tree from points (n, k) using median split.
     Returns root KDNode or None if empty.
@@ -116,4 +118,3 @@ def knn_query(root: KDNode | None, query: np.ndarray, k: int) -> list[tuple[floa
 
     search(root)
     return best
-

@@ -10,9 +10,7 @@ class TestTrainTestSplit(unittest.TestCase):
         df = pd.DataFrame(
             {
                 "community_area": [1.0, 1.0, 1.0, 1.0],
-                "month": pd.to_datetime(
-                    ["2015-01-01", "2022-12-01", "2023-01-01", "2024-12-01"]
-                ),
+                "month": pd.to_datetime(["2015-01-01", "2022-12-01", "2023-01-01", "2024-12-01"]),
                 "crime_count": [10, 20, 30, 40],
                 "lat": [41.88, 41.88, 41.88, 41.88],
                 "lon": [-87.63, -87.63, -87.63, -87.63],

@@ -17,4 +17,3 @@ def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     if y_true.shape != y_pred.shape:
         raise ValueError("y_true and y_pred must have same shape")
     return float(np.sqrt(np.mean((y_pred - y_true) ** 2)))
-

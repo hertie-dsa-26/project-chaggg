@@ -82,4 +82,3 @@ class SpatiotemporalKNN:
         d = np.sqrt(d2)
         w = 1.0 / (d + self.eps)
         return float(np.sum(w * yv) / np.sum(w))
-

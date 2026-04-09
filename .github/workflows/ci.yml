@@ -26,8 +26,15 @@ jobs:
         with:
           version: "latest"
 
-      - name: Sync dependencies
-        run: uv sync --locked
+      - name: Sync dependencies (incl. dev)
+        run: uv sync --locked --all-groups
+
+      # Scope: library + tests (legacy scripts/ use star-imports; expand later).
+      - name: Ruff lint
+        run: uv run ruff check src tests
+
+      - name: Ruff format
+        run: uv run ruff format --check src tests
 
       - name: Unit tests
         run: uv run python -m unittest discover -s tests -p "test_*.py" -v

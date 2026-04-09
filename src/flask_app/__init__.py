@@ -1,14 +1,15 @@
 """
 Flask application for Chicago Crime Analysis.
 """
+
 import json
 from pathlib import Path
 
 import pandas as pd
 from flask import Flask, jsonify, render_template, request
 
-from .data import load_crime_data
 from . import knn_paths
+from .data import load_crime_data
 
 
 def create_app():
@@ -22,7 +23,10 @@ def create_app():
     generated_dir = geo_dir / "generated"
     hotspot_variants = {
         "meters": (generated_dir / "hotspots_meters.geojson", geo_dir / "hotspots_meters.geojson"),
-        "degrees": (generated_dir / "hotspots_degrees.geojson", geo_dir / "hotspots_degrees.geojson"),
+        "degrees": (
+            generated_dir / "hotspots_degrees.geojson",
+            geo_dir / "hotspots_degrees.geojson",
+        ),
     }
 
     @app.route("/")
@@ -144,7 +148,7 @@ def create_app():
             time_scale = float(request.args.get("time_scale", 0.0))
             ca = float(request.args["community_area"])
             month = request.args["month"]
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             return jsonify(
                 {
                     "error": "bad_request",

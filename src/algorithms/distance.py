@@ -46,4 +46,3 @@ class SpaceTimeScaler:
             np.array([lon], dtype=float),
             np.array([month_index], dtype=float),
         )[0]
-
