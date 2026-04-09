@@ -58,6 +58,27 @@ def convert_types(df):
     
     return df
 
+def extract_temporal_features(df):
+    """Extract year, month, day, hour, and day of week from date/time columns."""
+    print("\nExtracting temporal features...")
+    
+    # From date column
+    df['year'] = df['date'].dt.year
+    df['month'] = df['date'].dt.month
+    df['day'] = df['date'].dt.day
+    df['day_of_week'] = df['date'].dt.dayofweek  # 0=Monday, 6=Sunday
+    
+    # From time column (convert back to datetime to extract hour)
+    df['hour'] = pd.to_datetime(df['time'], format='%H:%M:%S').dt.hour
+    
+    print(f"  - Extracted: year, month, day, hour, day_of_week")
+    
+    return df
+
+def remove_na_coordinates(df):
+    print("Removing rows with NaN values in longitude and latitude...")
+    return df.dropna(subset=['longitude', 'latitude'])
+
 def drop_redundant_columns(df):
     """Remove columns that duplicate information."""
     print("\nDropping redundant columns...")
@@ -142,6 +163,8 @@ def main():
     # Clean
     df = filter_years(df)
     df = convert_types(df)
+    df = extract_temporal_features(df)
+    df = remove_na_coordinates(df)
     df = drop_redundant_columns(df)
     
     # Validate & Report

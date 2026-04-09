@@ -29,6 +29,7 @@ def save_progress(offset, batch_num, total):
 def fetch_batch(offset, retries=3):
     """
     Fetch a single batch of records from the Chicago Data Portal API.
+    Only fetches records up to END_DATE specified in config.
     
     Args:
         offset: Starting record number
@@ -41,6 +42,7 @@ def fetch_batch(offset, retries=3):
         "$limit": BATCH_SIZE,
         "$offset": offset,
         "$order": "date ASC",
+        "$where": f"date < '{END_DATE}'",  # Filter download to records until end of 2025
         "$$app_token": APP_TOKEN
     }
     

@@ -52,6 +52,7 @@ def run_pipeline(skip_download=False):
     # Step 2: Clean
     print("STEP 2: Cleaning data")
     print("-" * 70)
+    cleaned_data_updated = False
     if os.path.exists(CLEANED_CSV):
         print(f"Cleaned data already exists: {CLEANED_CSV}")
         response = input("Do you want to re-run cleaning? (y/n): ").lower().strip()
@@ -59,14 +60,24 @@ def run_pipeline(skip_download=False):
             print("Skipping cleaning step.")
         else:
             clean.main()
+            cleaned_data_updated = True
     else:
         clean.main()
+        cleaned_data_updated = True
     print()
-    
+
     # Step 3: Convert to Parquet
     print("STEP 3: Converting to parquet")
     print("-" * 70)
-    convert_to_parquet()
+    if cleaned_data_updated:
+        # If we just cleaned the data, always regenerate parquet
+        print("Regenerating parquet from updated CSV...")
+        convert_to_parquet(force=True)
+    elif os.path.exists(CLEANED_PARQUET):
+        print(f"Parquet file already exists: {CLEANED_PARQUET}")
+        print("Skipping conversion (cleaned CSV unchanged).")
+    else:
+        convert_to_parquet()
     print()
     
     # Summary
