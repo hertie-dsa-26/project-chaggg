@@ -23,7 +23,11 @@ sys.path.insert(0, str(project_root / "scripts"))
 sys.path.insert(0, str(project_root))
 
 from utils import load_data  # noqa: E402
-from src.algorithms.data_prep import build_monthly_ca_table  # noqa: E402
+from src.algorithms.data_prep import (  # noqa: E402
+    build_monthly_ca_table,
+    MonthlyCommunityAreaTable,
+    split_train_test_by_year,
+)
 
 
 def main() -> None:
@@ -33,6 +37,11 @@ def main() -> None:
         type=Path,
         default=project_root / "outputs" / "knn" / "monthly_ca.parquet",
         help="Output path (parquet).",
+    )
+    parser.add_argument(
+        "--write-split",
+        action="store_true",
+        help="Also write train/test split parquet files next to --output.",
     )
     args = parser.parse_args()
 
@@ -56,6 +65,18 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     monthly.to_parquet(args.output, index=False)
     print(f"Saved: {args.output}", flush=True)
+
+    if args.write_split:
+        train_df, test_df = split_train_test_by_year(
+            monthly=MonthlyCommunityAreaTable(df=monthly)
+        )
+        # Default split per US-2.4: train 2015–2022, test 2023–2024
+        train_path = args.output.with_name("monthly_ca_train_2015_2022.parquet")
+        test_path = args.output.with_name("monthly_ca_test_2023_2024.parquet")
+        train_df.to_parquet(train_path, index=False)
+        test_df.to_parquet(test_path, index=False)
+        print(f"Saved split train: {train_path} rows={len(train_df):,}", flush=True)
+        print(f"Saved split test:  {test_path} rows={len(test_df):,}", flush=True)
 
 
 if __name__ == "__main__":
