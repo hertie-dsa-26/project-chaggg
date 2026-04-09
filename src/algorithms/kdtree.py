@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
 
 import numpy as np
 
@@ -51,6 +50,28 @@ def build_kdtree(points: np.ndarray, indices: np.ndarray | None = None, depth: i
 def _euclidean(a: np.ndarray, b: np.ndarray) -> float:
     d = a - b
     return float(np.dot(d, d))  # squared distance
+
+
+def knn_bruteforce(points: np.ndarray, query: np.ndarray, k: int) -> list[tuple[float, int]]:
+    """
+    Exact k smallest squared Euclidean distances (debug / regression check vs KD-tree).
+    Ties: stable sort by (distance, index) so behavior matches exhaustive reference.
+    """
+    if k < 1:
+        raise ValueError("k must be >= 1")
+    pts = np.asarray(points, dtype=float)
+    q = np.asarray(query, dtype=float).reshape(-1)
+    if pts.ndim != 2 or pts.shape[1] != q.shape[0]:
+        raise ValueError("points must be (n, d) with len(query)==d")
+    n = pts.shape[0]
+    if n == 0:
+        return []
+    d2 = np.sum((pts - q) ** 2, axis=1)
+    order = np.lexsort((np.arange(n, dtype=int), d2))
+    out: list[tuple[float, int]] = []
+    for j in order[: min(k, n)]:
+        out.append((float(d2[j]), int(j)))
+    return out
 
 
 def knn_query(root: KDNode | None, query: np.ndarray, k: int) -> list[tuple[float, int]]:

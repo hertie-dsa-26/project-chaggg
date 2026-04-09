@@ -125,7 +125,7 @@ Burada \(\lambda\) “1 ay kaç metreye eşit?” ölçeği. \(\lambda\) için 2
 **Amaç:** Acceptance’ta istenen “all areas × all months” üretimi.
 
 - Test set tablosu üzerinden her satır için prediction
-- Output: `outputs/knn/predictions_knn.csv` (gitignore altında)
+- Output: `outputs/knn/predictions_knn.csv` (gitignore altında; `run_knn_forecast.py` en iyi K’yı RMSE’ye göre buraya kopyalar) ve `forecast_predictions_k{K}.csv`
 
 **Kontrol:** dosya yazıldı mı, satır sayısı doğru mu.
 
@@ -162,12 +162,13 @@ Burada \(\lambda\) “1 ay kaç metreye eşit?” ölçeği. \(\lambda\) için 2
   - design decisions (KD-tree, scaling, weights)
   - results (K tuning, metrics)
   - limitations
+- Demo: `./scripts/demo_knn.sh` (prep + forecast; cleaned data gerekir)
 
 ---
 
 ## PR açmadan önce son checklist
 
-- `uv run python scripts/run_knn_forecast.py` (smoke run) başarılı
+- `./scripts/demo_knn.sh` veya `uv run python scripts/run_knn_forecast.py` (smoke run) başarılı
 - Flask `/viz/knn` açılıyor, input değişince sonuç değişiyor
 - Unit testler çalışıyor (`uv run pytest` varsa)
 - `git status` temiz; küçük commit’ler var; branch pushlandı

@@ -4,7 +4,7 @@
 
 {% block content %}
 <h2>Welcome</h2>
-<p>Explore our analysis of the City of Chicago's crime dataset — incident-level data from 2001 to 2025.</p>
+<p>End-to-end exploration of Chicago crime data: ingestion and cleaning, spatial–temporal models in the app, and interactive views.</p>
 
 <div class="card">
     <h2>Research Question</h2>
@@ -13,10 +13,22 @@
 </div>
 
 <div class="card">
-    <h2>Explore</h2>
-    <p>EDA visualizations and ML components will be integrated here as the project progresses.</p>
+    <h2>Data → analysis pipeline</h2>
+    <p>Raw API export is cleaned and aggregated in the scripts layer; the Flask app loads cleaned data and serves derived artifacts (hotspots GeoJSON, KNN forecasts).</p>
     <ul class="link-list">
-        <li><a href="/viz/placeholder">→ Visualizations (coming soon)</a></li>
+        <li><a href="/about">→ Project context</a></li>
+        <li><a href="https://github.com/hertie-dsa-26/project-chaggg/blob/main/docs/ARCHITECTURE.md">→ Architecture (repo)</a></li>
+    </ul>
+</div>
+
+<div class="card">
+    <h2>Explore in the app</h2>
+    <p>Move from summaries to models and maps in one place.</p>
+    <ul class="link-list">
+        <li><a href="/dashboards/time">→ Dashboards (time, space, types)</a></li>
+        <li><a href="/viz/hotspots">→ DBSCAN hotspot map</a></li>
+        <li><a href="/viz/knn">→ KNN monthly forecast (2023–2024 test window)</a></li>
+        <li><a href="/viz/placeholder">→ Additional visualizations</a></li>
     </ul>
 </div>
 {% endblock %}

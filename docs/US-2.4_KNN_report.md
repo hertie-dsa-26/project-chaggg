@@ -73,15 +73,71 @@ Issue: [US-2.4: KNN Prediction Algorithm #66](https://github.com/hertie-dsa-26/p
   - `uv run python -m unittest discover -s tests -p "test_*.py" -q` → **OK** (3 tests, hızlı)
 - **Commit**: `61937cb`
 
+### Step 5 — Batch forecast runner + K tuning (US-2.4 Adım 7–8)
+
+- **What**
+  - `scripts/run_knn_forecast.py`: train/test parquet’ten `SpatiotemporalKNN` ile tüm test satırlarında tahmin; **MAE/RMSE**; CSV + `forecast_metrics.json`.
+- **Default run (space=meters, time_scale=0)** — özet:
+  - K=5: MAE **45.08**, RMSE **71.15**
+  - K=10: MAE **43.23**, RMSE **67.81**
+  - K=20: MAE **42.29**, RMSE **65.68** ← en iyi K
+- **Outputs**: `outputs/knn/forecast_predictions_k{5,10,20}.csv`, `outputs/knn/forecast_metrics.json`
+
+### Step 6 — time_scale grid search (workflow “λ” deneysel)
+
+- **What**: `scripts/run_knn_tune_timescale.py` — `time_scale` ∈ {0, 500, 1000, 2000, 5000, 10000} × K ∈ {5, 10, 20}, space=meters.
+- **Sonuç (RMSE’ye göre en iyi)**: **`time_scale=0`**, **K=20** (aynı baseline). Pozitif `time_scale` ile zaman boyutu metre ölçeğinde mesafeyi baskıladığı için bu gridde metrikler kötüleşti; farklı ölçek aralıkları veya `space=degrees` ayrıca denenebilir.
+- **Output**: `outputs/knn/forecast_metrics_timescale_sweep.json`
+
+### Step 7 — Flask entegrasyonu (US-2.4 Adım 9)
+
+- **What**
+  - `/viz/knn`: K ve test ayı seçimi; tablo + Leaflet haritada CA proxy noktaları (CSV’den).
+  - `/api/knn/predict`: `community_area`, `month`, isteğe bağlı `k`, `time_scale` — train parquet üzerinde model eğitip tek nokta tahmini (JSON).
+- **Önkoşul**: `outputs/knn/` altında prep + forecast çalıştırılmış olmalı; yoksa sayfa talimat gösterir, API 503 döner.
+- **Tests**: `tests/test_flask_routes.py` — `/viz/knn` 200; KNN çıktıları varken API smoke.
+
+---
+
+## How to run (özet)
+
+```bash
+# 1) Cleaned data sonrası monthly + split
+uv run python scripts/run_knn_prep.py --write-split
+
+# 2) Forecast + metrikler
+uv run python scripts/run_knn_forecast.py --k 5,10,20 --space meters --time-scale 0
+
+# 3) (İsteğe bağlı) time_scale taraması
+uv run python scripts/run_knn_tune_timescale.py
+
+# 4) Web
+# CHAGGG_SKIP_DATA_LOAD=1 uv run flask --app src.flask_app:create_app run
+```
+*(Flask entrypoint projede nasıl tanımlandıysa ona göre uyarlayın.)*
+
+**Tek komut demo (workflow Adım 10):** cleaned data hazırsa repo kökünden:
+
+```bash
+./scripts/demo_knn.sh
+```
+
+Bu script `run_knn_prep.py --write-split` ve `run_knn_forecast.py` çalıştırır. Forecast sonunda `outputs/knn/predictions_knn.csv`, o koşuda **RMSE’ye göre en iyi K**’nın tahmin dosyasının kopyasıdır (workflow Adım 7’deki isimlendirme).
+
+---
+
+## Limitations
+
+- **Lokasyon proxy**: CA×ay için lat/lon, o hücredeki olayların ortalaması; gerçek community polygon centroid değil.
+- **API / portal drift**: Ham veri snapshot’ı farklıysa satır sayıları ve dolayısıyla agregasyon biraz değişebilir.
+- **time_scale**: Denenen pozitif grid (`run_knn_tune_timescale.py`) default `space=meters` altında metrikleri kötüleştirdi; daha ince tarama veya `space=degrees` ayrı deney gerektirir.
+- **Flask**: Görünüm önceden üretilmiş CSV’lere dayanır; canlı yeniden eğitim `/api/knn/predict` isteği başına yapılır (küçük tablo için ucuz).
+
 ---
 
 ## Current state
 
-- KD-tree ve KNN skeleton + scaling var.
-- Monthly aggregation + split parquet üretimi var.
-- Unit testlerle KD-tree correctness ve exact-match KNN davranışı kanıtlandı.
-
-## Next planned step
-
-- `scripts/run_knn_forecast.py`: train parquet’i okuyup KD-tree ile batch prediction yapma, K=5/10/20 deneme, MAE/RMSE hesaplama, outputs yazma.
+- From-scratch **KD-tree + `SpatiotemporalKNN`**, monthly CA prep, train/test split, batch forecast, K tuning, time_scale grid search ve Flask görünümü/API tamamlandı.
+- Üretim dosyaları `outputs/knn/` altında (git’e genelde eklenmez; lokal veya CI artifact).
+- **PR öncesi checklist** (`docs/US-2.4_KNN_workflow.md`): smoke forecast (`demo_knn.sh` veya `run_knn_forecast.py`), `/viz/knn`, unit testler, branch push — takım sürecine göre tamamlanacak.
 

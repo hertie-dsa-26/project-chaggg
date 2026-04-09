@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .distance import SpaceTimeScaler
-from .kdtree import KDNode, build_kdtree, knn_query
+from .kdtree import KDNode, build_kdtree, knn_bruteforce, knn_query
 
 
 @dataclass
@@ -22,6 +22,8 @@ class SpatiotemporalKNN:
     space: str = "degrees"  # "degrees" | "meters"
     time_scale: float = 0.0  # meters-per-month (if meters) or degrees-per-month (if degrees)
     eps: float = 1e-9
+    # Debug / validation: O(n) neighbor search (same weighting as KD path)
+    use_bruteforce: bool = False
 
     _root: KDNode | None = None
     _X: np.ndarray | None = None
@@ -46,21 +48,26 @@ class SpatiotemporalKNN:
         X = self._scaler.transform(lat=lat, lon=lon, month_index=t)
         self._X = X
         self._y = y
-        self._root = build_kdtree(X)
+        self._root = None if self.use_bruteforce else build_kdtree(X)
 
     def predict(self, location: tuple[float, float], time: float) -> float:
         """
         location: (lat, lon)
         time: month_index (float or int)
         """
-        if self._root is None or self._X is None or self._y is None:
+        if self._X is None or self._y is None:
+            raise RuntimeError("Model not trained. Call train(data) first.")
+        if not self.use_bruteforce and self._root is None:
             raise RuntimeError("Model not trained. Call train(data) first.")
         if self._scaler is None:
             raise RuntimeError("Internal error: scaler missing. Call train(data) first.")
 
         lat, lon = float(location[0]), float(location[1])
         q = self._scaler.transform_one(lat=lat, lon=lon, month_index=float(time))
-        neighbors = knn_query(self._root, q, k=self.k)
+        if self.use_bruteforce:
+            neighbors = knn_bruteforce(self._X, q, k=self.k)
+        else:
+            neighbors = knn_query(self._root, q, k=self.k)
         if not neighbors:
             return float("nan")
 

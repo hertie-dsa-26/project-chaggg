@@ -1,0 +1,33 @@
+# Development Process: automated quality gate (rubric "CI or automation")
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      CHAGGG_SKIP_DATA_LOAD: "1"
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Sync dependencies
+        run: uv sync --locked
+
+      - name: Unit tests
+        run: uv run python -m unittest discover -s tests -p "test_*.py" -v

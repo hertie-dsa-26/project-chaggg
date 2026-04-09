@@ -1,10 +1,23 @@
-## What does this PR do?
+## Summary
 
-## How can a reviewer test this?
+<!-- What does this PR do and why? -->
 
-## Any edge cases to be aware of?
+## How to test
+
+<!-- Commands, manual steps, or “N/A” for docs-only -->
+
+```bash
+CHAGGG_SKIP_DATA_LOAD=1 uv run python -m unittest discover -s tests -p "test_*.py" -q
+```
 
 ## Checklist
-- [ ] Tests written
-- [ ] No direct push to main
-- [ ] Reviewed by at least one teammate
+
+- [ ] Tests pass locally (and CI is green).
+- [ ] At least one reviewer assigned (no self-merge without team rules).
+- [ ] No secrets or personal tokens committed.
+- [ ] User-facing changes documented or linked (`docs/` or README) if needed.
+
+## Rubric / quality (optional)
+
+- [ ] Architecture: changes fit existing module boundaries (`docs/ARCHITECTURE.md`).
+- [ ] Edge cases or limitations noted where relevant.
