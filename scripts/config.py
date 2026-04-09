@@ -17,7 +17,7 @@ CLEANED_PARQUET = os.path.join(CLEANED_DIR, "chicago_crimes_cleaned.parquet")
 PROGRESS_FILE = os.path.join(RAW_DIR, "download_progress.json")
 
 # ── API Settings ──────────────────────────────────────────────────────────────
-APP_TOKEN = "2jkwyOog35lVR5aH2wYkwJrKS"  # Get your token from Chicago Data portal
+APP_TOKEN = "YOUR_APP_TOKEN_HERE"  # Get your token from Chicago Data portal
 BASE_URL = "https://data.cityofchicago.org/resource/ijzp-q8t2.json"
 BATCH_SIZE = 50000
 END_DATE = "2026-01-01T00:00:00.000"  # Fetch records only up to the end of 2025
