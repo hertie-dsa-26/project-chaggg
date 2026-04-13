@@ -12,12 +12,25 @@ We are using the City of Chicago's crime dataset, which provides comprehensive i
 
 [Crimes - 2001 to Present](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data)
 
-## Dataset Setup
+## Data Setup
 
-The datasets are not stored in this repository. To download them, follow these steps in your terminal:
-1. git clone <repo>
-2. uv sync
-3. uv run scripts/main.py
+The datasets are not stored in this repository due to their size. To download and prepare the data:
+
+1. **Clone the repository:**
+```bash
+   git clone 
+   cd project-chaggg
+```
+
+2. **Install dependencies:**
+```bash
+   uv sync
+```
+
+3. **Run the data pipeline:**
+```bash
+   uv run scripts/main.py
+```
 
 ## Development Workflow
 
