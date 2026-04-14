@@ -43,7 +43,7 @@ def fetch_batch(offset, retries=3):
         "$offset": offset,
         "$order": "date ASC",
         "$where": f"date < '{END_DATE}'",  # Filter download to records until end of 2025
-        "$$app_token": APP_TOKEN
+        "$$app_token": "H9ETY0ZCsP5vHUqNI6NE2FKG5"
     }
     
     for attempt in range(1, retries + 1):
