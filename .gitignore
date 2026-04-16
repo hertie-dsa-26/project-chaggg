@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Flask
+instance/
+*.log
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Local tooling
+.tools/
+
+# Data artifacts (large / local-only)
+data/
+data/**/*.csv
+data/**/*.parquet
+data/**/*.json
+data/**/*.pkl
+data/**/*.pickle
+notebooks/01_download_data.ipynb
+notebooks/01_download_data.ipynb
+notebooks/01_download_data.ipynb
+notebooks/gustavo_sandbox.ipynb
+notebooks/yuri_sandbox.ipynb
