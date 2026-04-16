@@ -365,9 +365,7 @@ def grid_search_dbscan(
         min_samples_values = [10, 50, 100]
 
     rows = []
-    candidates: list[
-        tuple[float, int, dict[str, float], np.ndarray, gpd.GeoDataFrame, int]
-    ] = []
+    candidates: list[tuple[float, int, dict[str, float], np.ndarray, gpd.GeoDataFrame, int]] = []
 
     for eps in eps_values:
         for ms in min_samples_values:
@@ -410,9 +408,7 @@ def grid_search_dbscan(
     else:
         pool = candidates
 
-    best_eps, best_ms, best_m, best_labels, best_bounds, _ = max(
-        pool, key=lambda c: c[2]["f1"]
-    )
+    best_eps, best_ms, best_m, best_labels, best_bounds, _ = max(pool, key=lambda c: c[2]["f1"])
     all_runs = pd.DataFrame(rows)
     return TuningResult(
         best_eps=best_eps,
