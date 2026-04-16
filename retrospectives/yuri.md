@@ -1,0 +1,3 @@
+- removed invlaid latitute and longitude because they made the largest distance between two coordinate points being 600km, I realised this when I tried to find the max distance to normalise the similarity function 
+- number of days in months are always different. but to still have them cyclical so that 31.04 is close to 01.05, I used 31 to make it cyclical 
+- i took out the day of the month parameter from the temporal distance function as its first of all hard to turn it into cyclical and its also negligent to the patterns we are trying to find. for us, more important is the weekday, the month (season) and the time of the day

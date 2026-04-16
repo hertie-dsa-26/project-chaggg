@@ -1,7 +1,0 @@
-README.md
-pyproject.toml
-src/project_chaggg.egg-info/PKG-INFO
-src/project_chaggg.egg-info/SOURCES.txt
-src/project_chaggg.egg-info/dependency_links.txt
-src/project_chaggg.egg-info/requires.txt
-src/project_chaggg.egg-info/top_level.txt

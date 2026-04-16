@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard · Crime Types - Chicago Crime Analysis{% endblock %}
+
+{% block content %}
+<h2>Dashboard: Crime Types</h2>
+<p>Crime type exploration placeholder. Loaded rows: <strong>{{ rows }}</strong>.</p>
+
+<div class="card">
+    <h2>Planned views</h2>
+    <ul class="link-list">
+        <li><a href="/dashboards/time">→ Temporal dashboard</a></li>
+        <li><a href="/dashboards/space">→ Spatial dashboard</a></li>
+    </ul>
+</div>
+
+<a href="/" class="btn btn-secondary">← Back to home</a>
+{% endblock %}
+

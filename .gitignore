@@ -1,20 +1,38 @@
-data/
-*.csv
-*.parquet
-*.json
+# Python
 __pycache__/
-.venv/
-.DS_Store
+*.py[cod]
+*.pyd
+*.so
 *.egg-info/
 *.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+
+# Virtual environments
 .venv/
+venv/
+env/
 
 # Local outputs / artifacts
 outputs/
-*.log
-*.pid
+
 # Avoid ignoring all HTML since Flask templates are HTML.
 # Keep ignoring specific generated HTML files explicitly instead.
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Flask
+instance/
+*.log
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
 
 # Local tooling
 .tools/
@@ -29,3 +47,14 @@ scripts/download_chicago_crimes.py
 
 # Generated Flask demo artifacts (produced by run_dbscan_hotspots.py --export-flask-static)
 src/flask_app/static/geo/generated/
+
+# Data artifacts (large / local-only)
+data/
+data/**/*.csv
+data/**/*.parquet
+data/**/*.json
+data/**/*.pkl
+data/**/*.pickle
+notebooks/01_download_data.ipynb
+notebooks/gustavo_sandbox.ipynb
+notebooks/yuri_sandbox.ipynb
