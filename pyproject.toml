@@ -59,9 +59,6 @@ quote-style = "double"
 [tool.coverage.run]
 branch = true
 source = ["src"]
-omit = [
-    "**/dbscan_hotspots.py",
-]
 
 [tool.coverage.report]
 fail_under = 78

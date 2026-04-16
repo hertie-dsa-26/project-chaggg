@@ -7,8 +7,8 @@ Bu belge **Architecture & Design (rubric)** için yüksek seviye tasarımı öze
 | Katman | Konum | Görev |
 |--------|--------|--------|
 | Ham veri → temiz CSV/parquet | `scripts/fetch.py`, `scripts/clean.py`, `scripts/utils.py`, `scripts/config.py` | İndirme, filtreleme, tip dönüşümü; `load_data` tek giriş noktası |
-| Algoritmalar (from-scratch + yardımcılar) | `src/algorithms/` | KD-tree, KNN, metrikler, monthly aggregation, DBSCAN (modül bazında ayrık) |
-| Batch / CLI | `scripts/run_*.py` | KNN prep & forecast, DBSCAN export, pipeline `main.py` |
+| Algoritmalar (from-scratch + yardımcılar) | `src/algorithms/` | KD-tree, KNN, metrikler, monthly aggregation (modül bazında ayrık) |
+| Batch / CLI | `scripts/run_*.py` | KNN prep & forecast, pipeline `main.py` |
 | Web | `src/flask_app/` | Flask app factory, şablonlar, statik GeoJSON, KNN yolları (`knn_paths.py`) |
 
 ## Veri akışı (özet)
@@ -28,14 +28,11 @@ flowchart LR
   subgraph ml [Analysis]
     MONTH[monthly CA table]
     KNN[KNN + KD-tree]
-    DBS[DBSCAN hotspots]
     PQ --> MONTH --> KNN
-    PQ --> DBS
   end
   subgraph web [Flask]
     VIZ[visualizations / API]
     KNN --> VIZ
-    DBS --> VIZ
   end
 ```
 
@@ -54,4 +51,4 @@ flowchart LR
 - **Doğruluk**: KD-tree kNN küçük rastgele sette bruteforce ile aynı komşu kümesi; mesafe ölçeği simetri/sıfır mesafe; train/test yılı çakışması yok.
 - **Regresyon**: Flask route’ları (KNN çıktıları varsa API smoke).
 
-Daha fazla ayrıntı: `docs/US-2.4_KNN_report.md`, `docs/US-2.6_DBSCAN_report.md` (ilgili kullanıcı hikâyeleri).
+Daha fazla ayrıntı: `docs/US-2.4_KNN_report.md` (ilgili kullanıcı hikâyesi).
