@@ -25,10 +25,44 @@ dependencies = [
     "pytest>=9.0.3",
     "python-dotenv>=1.2.2",
     "requests>=2.32.5",
+    "scikit-learn>=1.6.0",
     "seaborn>=0.13.2",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=9.0.3",
+    "coverage>=7.13.5",
+    "ruff>=0.15.10",
 ]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+exclude = [
+    ".git",
+    ".venv",
+    "notebooks",
+    "data",
+    "outputs",
+    "src/project_chaggg.egg-info",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    "E501",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = [
+    "src/algorithms/dbscan_hotspots.py",
+]
+
+[tool.coverage.report]
+fail_under = 78
+show_missing = true

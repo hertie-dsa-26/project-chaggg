@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Hotspots - Chicago Crime Analysis{% endblock %}
+
+{% block extra_css %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""
+/>
+<style>
+  .container { max-width: 1100px; }
+  #map { height: 560px; border-radius: 10px; border: 1px solid var(--border); }
+  .controls { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+  label { color: var(--text-muted); font-size: 0.9rem; }
+  select {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+  }
+  .small { color: var(--text-muted); font-size: 0.9rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>DBSCAN Hotspots</h2>
+<p class="small">
+  Interactive map overlay of DBSCAN cluster boundaries (GeoJSON). Choose a variant to compare degree-space vs meter-space clustering.
+</p>
+
+<div class="card">
+  <div class="controls">
+    <div>
+      <label for="variant">Hotspot variant</label><br />
+      <select id="variant">
+        <option value="meters" selected>Meters (UTM16N) — eps in meters</option>
+        <option value="degrees">Degrees — eps in degrees</option>
+      </select>
+    </div>
+    <div class="small" id="status">Loading…</div>
+  </div>
+  <div style="height: 1rem;"></div>
+  <div id="map"></div>
+</div>
+
+<a href="/" class="btn btn-secondary">← Back to home</a>
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+<script>
+  const statusEl = document.getElementById("status");
+  const variantEl = document.getElementById("variant");
+
+  const map = L.map("map").setView([41.881, -87.63], 10);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+
+  let layer = null;
+
+  async function loadGeoJson(variant) {
+    statusEl.textContent = "Loading GeoJSON…";
+    const resp = await fetch(`/api/hotspots?variant=${encodeURIComponent(variant)}`);
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`API error ${resp.status}: ${text}`);
+    }
+    return await resp.json();
+  }
+
+  function render(geojson) {
+    if (layer) {
+      layer.remove();
+      layer = null;
+    }
+    layer = L.geoJSON(geojson, {
+      style: function () {
+        return { color: "#3b82f6", weight: 2, fillOpacity: 0.08 };
+      },
+      onEachFeature: function (feature, layer) {
+        const cid = feature?.properties?.cluster_id;
+        layer.bindPopup(`Cluster ${cid}`);
+      }
+    }).addTo(map);
+    try {
+      map.fitBounds(layer.getBounds(), { padding: [12, 12] });
+    } catch (_) {}
+  }
+
+  async function refresh() {
+    const v = variantEl.value;
+    try {
+      const geojson = await loadGeoJson(v);
+      render(geojson);
+      statusEl.textContent = `Loaded variant: ${v}`;
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = `Failed to load: ${String(err.message || err)}`;
+    }
+  }
+
+  variantEl.addEventListener("change", refresh);
+  refresh();
+</script>
+{% endblock %}
