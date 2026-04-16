@@ -148,7 +148,7 @@ def create_app():
             time_scale = float(request.args.get("time_scale", 0.0))
             ca = float(request.args["community_area"])
             month = request.args["month"]
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             return jsonify(
                 {
                     "error": "bad_request",
@@ -156,8 +156,9 @@ def create_app():
                 }
             ), 400
 
-        train_path = knn_paths.KNN_DIR / "monthly_ca_train_2015_2022.parquet"
-        test_path = knn_paths.KNN_DIR / "monthly_ca_test_2023_2024.parquet"
+        knn_dir = knn_paths.knn_dir()
+        train_path = knn_dir / "monthly_ca_train_2015_2022.parquet"
+        test_path = knn_dir / "monthly_ca_test_2023_2024.parquet"
         train_df = pd.read_parquet(train_path)
         test_df = pd.read_parquet(test_path)
         month_ts = pd.to_datetime(month)

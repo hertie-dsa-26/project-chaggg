@@ -3,20 +3,33 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-KNN_DIR = PROJECT_ROOT / "outputs" / "knn"
+
+
+def knn_dir() -> Path:
+    """
+    Directory for KNN artifacts.
+
+    Overridable for tests/CI via CHAGGG_KNN_DIR.
+    """
+    override = os.environ.get("CHAGGG_KNN_DIR")
+    if override:
+        return Path(override).expanduser().resolve()
+    return PROJECT_ROOT / "outputs" / "knn"
 
 
 def knn_artifacts_present() -> bool:
-    return (KNN_DIR / "forecast_predictions_k10.csv").is_file() and (
-        KNN_DIR / "monthly_ca_train_2015_2022.parquet"
+    d = knn_dir()
+    return (d / "forecast_predictions_k10.csv").is_file() and (
+        d / "monthly_ca_train_2015_2022.parquet"
     ).is_file()
 
 
 def metrics_path() -> Path:
-    return KNN_DIR / "forecast_metrics.json"
+    return knn_dir() / "forecast_metrics.json"
 
 
 def load_forecast_metrics() -> dict:
@@ -27,4 +40,4 @@ def load_forecast_metrics() -> dict:
 
 
 def predictions_csv_path(k: int) -> Path:
-    return KNN_DIR / f"forecast_predictions_k{k}.csv"
+    return knn_dir() / f"forecast_predictions_k{k}.csv"

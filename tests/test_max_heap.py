@@ -5,13 +5,15 @@ Run with:  python -m pytest test_max_heap.py -v
 """
 
 import math
-import pytest
-from max_heap import MaxHeap, knn_regression, euclidean_distance
 
+import pytest
+
+from max_heap import MaxHeap, euclidean_distance, knn_regression
 
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def is_valid_max_heap(heap: MaxHeap) -> bool:
     """Walk every parent-child triple and assert parent >= children."""
@@ -30,6 +32,7 @@ def is_valid_max_heap(heap: MaxHeap) -> bool:
 # ===========================================================================
 # MaxHeap — initialisation
 # ===========================================================================
+
 
 class TestMaxHeapInit:
     def test_empty_on_creation(self):
@@ -52,6 +55,7 @@ class TestMaxHeapInit:
 # ===========================================================================
 # MaxHeap — add / capacity enforcement
 # ===========================================================================
+
 
 class TestMaxHeapAdd:
     def test_insert_below_capacity(self):
@@ -98,6 +102,7 @@ class TestMaxHeapAdd:
     def test_heap_property_maintained_after_many_inserts(self):
         h = MaxHeap(capacity=5)
         import random
+
         random.seed(42)
         for _ in range(30):
             h.add(random.uniform(0, 100), random.uniform(0, 500))
@@ -107,6 +112,7 @@ class TestMaxHeapAdd:
 # ===========================================================================
 # MaxHeap — worst_distance
 # ===========================================================================
+
 
 class TestWorstDistance:
     def test_raises_on_empty_heap(self):
@@ -142,6 +148,7 @@ class TestWorstDistance:
 # MaxHeap — get_all
 # ===========================================================================
 
+
 class TestGetAll:
     def test_returns_copy_not_reference(self):
         h = MaxHeap(capacity=3)
@@ -167,6 +174,7 @@ class TestGetAll:
 # ===========================================================================
 # MaxHeap — bubble_up / bubble_down (structural)
 # ===========================================================================
+
 
 class TestHeapStructure:
     def test_bubble_up_single_insert(self):
@@ -196,6 +204,7 @@ class TestHeapStructure:
 # KNN regression
 # ===========================================================================
 
+
 class TestKNNRegression:
     X = [
         [1.0, 2.0],
@@ -224,8 +233,7 @@ class TestKNNRegression:
         query = [2.5, 2.5]
         k = 3
         distances = sorted(
-            (euclidean_distance(f, query), t)
-            for f, t in zip(self.X, self.y)
+            (euclidean_distance(f, query), t) for f, t in zip(self.X, self.y, strict=True)
         )
         kth_dist = distances[k - 1][0]
 
@@ -234,10 +242,8 @@ class TestKNNRegression:
 
         # Any combination of k points from `candidates` is a valid answer
         from itertools import combinations
-        valid_predictions = {
-            sum(t for _, t in combo) / k
-            for combo in combinations(candidates, k)
-        }
+
+        valid_predictions = {sum(t for _, t in combo) / k for combo in combinations(candidates, k)}
 
         result = knn_regression(self.X, self.y, query, k=k)
         assert any(math.isclose(result, v, rel_tol=1e-9) for v in valid_predictions)
