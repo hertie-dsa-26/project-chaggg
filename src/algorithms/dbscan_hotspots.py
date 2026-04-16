@@ -349,9 +349,15 @@ def grid_search_dbscan(
     min_samples_values: list[int] | None = None,
     hull_buffer_deg: float = 0.0008,
     verbose: bool = False,
+    prefer_multi_cluster: bool = True,
 ) -> TuningResult:
     """
     Try (eps, min_samples) combinations; pick best F1 on provided test set.
+
+    If ``prefer_multi_cluster`` is True (default), among runs with at least two
+    DBSCAN clusters we maximize F1. This avoids choosing an oversized ``eps``
+    that merges the city into one hull solely because F1 on a binary survey
+    still looks acceptable. If no run has 2+ clusters, falls back to best F1.
     """
     if eps_values is None:
         eps_values = [0.01, 0.05, 0.1]
@@ -359,8 +365,9 @@ def grid_search_dbscan(
         min_samples_values = [10, 50, 100]
 
     rows = []
-    best_f1 = -1.0
-    best: tuple[float, int, dict[str, float], np.ndarray, gpd.GeoDataFrame] | None = None
+    candidates: list[
+        tuple[float, int, dict[str, float], np.ndarray, gpd.GeoDataFrame, int]
+    ] = []
 
     for eps in eps_values:
         for ms in min_samples_values:
@@ -377,9 +384,10 @@ def grid_search_dbscan(
                 print(f"    predict {len(xy_test):,} test points…", flush=True)
             y_pred = predict_hotspot_labels(xy_test, bounds)
             m = classification_metrics(y_test, y_pred)
+            n_clusters = int(len(set(labels.tolist())) - (1 if -1 in labels else 0))
             if verbose:
                 print(
-                    f"    f1={m['f1']:.4f} clusters={int(len(set(labels)) - (1 if -1 in set(labels) else 0))}",
+                    f"    f1={m['f1']:.4f} clusters={n_clusters}",
                     flush=True,
                 )
             rows.append(
@@ -387,20 +395,25 @@ def grid_search_dbscan(
                     "eps": eps,
                     "min_samples": ms,
                     **m,
-                    "n_clusters": int(len(set(labels.tolist())) - (1 if -1 in labels else 0)),
+                    "n_clusters": n_clusters,
                     "noise_fraction_train": float(np.mean(labels == -1)),
                 }
             )
-            if m["f1"] > best_f1:
-                best_f1 = m["f1"]
-                best = (eps, ms, m, labels.copy(), bounds)
+            candidates.append((eps, ms, m, labels.copy(), bounds, n_clusters))
 
-    if best is None:
+    if not candidates:
         raise RuntimeError("Grid search failed — no parameter combo evaluated")
 
+    if prefer_multi_cluster:
+        multi = [c for c in candidates if c[5] >= 2]
+        pool = multi if multi else candidates
+    else:
+        pool = candidates
+
+    best_eps, best_ms, best_m, best_labels, best_bounds, _ = max(
+        pool, key=lambda c: c[2]["f1"]
+    )
     all_runs = pd.DataFrame(rows)
-    _, best_ms, best_m, best_labels, best_bounds = best
-    best_eps = best[0]
     return TuningResult(
         best_eps=best_eps,
         best_min_samples=best_ms,

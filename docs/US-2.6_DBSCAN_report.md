@@ -15,7 +15,7 @@ Implement **DBSCAN hotspot detection** to identify spatial crime clusters using 
   - `fit_dbscan(xy, eps, min_samples, ...)`: runs **sklearn DBSCAN** (defaults to `n_jobs=-1`)
   - `cluster_boundaries_geodataframe(xy, labels, ...)`: builds **cluster boundary polygons** (convex hull per cluster, buffered for degenerate cases)
   - `predict_hotspot_labels(xy_test, boundaries)`: predicts 1/0 using **point-in-(union of) cluster boundary** (vectorized)
-  - `grid_search_dbscan(...)`: grid search over \(\epsilon\) and `min_samples`, selects best **F1**
+  - `grid_search_dbscan(...)`: grid search over \(\epsilon\) and `min_samples`; maximizes **F1** among runs with **at least two clusters** when possible (avoids picking an oversized \(\epsilon\) that merges the city into one hull). Falls back to plain best F1 if every grid point yields a single cluster.
   - Metrics: accuracy, precision, recall, F1
   - Negative sampling options:
     - `sample_negative_points_sparse_grid(...)` (**default**) — draws negatives from grid cells with ≤ `max_crimes_per_cell` crimes in test period (default 0)
@@ -39,6 +39,10 @@ PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplot uv run python scripts/run_dbscan_ho
 ```
 
 Useful flags:
+
+- **Tuning / map shape**
+  - Default \(\epsilon\) grids are **tighter** than early versions (meters: about **300–2000 m**, degrees: smaller degree steps) so hotspots stay more **local** instead of one metro-wide polygon.
+  - `--no-prefer-multi-cluster` — restore old behavior: choose **F1** even when that means a **single** giant cluster.
 
 - **Speed / scale**
   - `--max-train 45000` (default) or increase for heavier run (e.g. `120000`)

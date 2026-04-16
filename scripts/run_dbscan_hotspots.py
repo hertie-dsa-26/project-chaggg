@@ -127,6 +127,12 @@ def main() -> None:
         action="store_true",
         help="Copy resulting cluster_boundaries.geojson into Flask static/geo for demo.",
     )
+    parser.add_argument(
+        "--no-prefer-multi-cluster",
+        action="store_true",
+        help="Grid search: maximize F1 even when that means a single giant cluster "
+        "(default prefers 2+ clusters when possible).",
+    )
     args = parser.parse_args()
     out_dir = args.output_dir or (project_root / "outputs" / "dbscan")
 
@@ -194,17 +200,24 @@ def main() -> None:
         ]
     )
 
-    print("Parameter grid (9 combos) — first DBSCAN fit may take 1–3 min…", flush=True)
+    min_samples_values = [10, 50, 100]
     if args.space == "degrees":
         train_xy_for_fit = train_latlon
         train_latlon_for_bounds = None
-        eps_values = [0.01, 0.05, 0.1]
+        # Finer than [0.01,0.05,0.1]: large degree eps merges most of the metro into one hull.
+        eps_values = [0.004, 0.01, 0.02, 0.04]
     else:
         # Cluster in meters for more meaningful eps; keep boundaries in WGS84 for mapping.
         print("Projecting training points to meters (UTM16N) for DBSCAN…", flush=True)
         train_xy_for_fit = project_latlon_to_meters(train_latlon, dst_crs="EPSG:32616")
         train_latlon_for_bounds = train_latlon
-        eps_values = [500, 1500, 3000]
+        # Omit 3000 m: at city scale it often collapses to one cluster; prefer local hotspots.
+        eps_values = [300, 600, 1200, 2000]
+    print(
+        f"Parameter grid ({len(eps_values) * len(min_samples_values)} combos) — "
+        "first DBSCAN fit may take 1–3 min…",
+        flush=True,
+    )
 
     if args.k_distance_plot:
         print(
@@ -225,8 +238,9 @@ def main() -> None:
         xy_test,
         y_test,
         eps_values=eps_values,
-        min_samples_values=[10, 50, 100],
+        min_samples_values=min_samples_values,
         verbose=not args.quiet,
+        prefer_multi_cluster=not args.no_prefer_multi_cluster,
     )
     y_pred = predict_hotspot_labels(xy_test, result.boundaries)
 
@@ -263,6 +277,7 @@ def main() -> None:
         "run_config": {
             "columns_loaded": ["latitude", "longitude", "year", "date"],
             "space": args.space,
+            "prefer_multi_cluster": not bool(args.no_prefer_multi_cluster),
             "k_distance_plot": bool(args.k_distance_plot),
             "k_distance_k": int(args.k_distance_k),
             "negative_strategy": args.negative_strategy,
