@@ -101,7 +101,7 @@ def create_app():
             time_scale = float(request.args.get("time_scale", 0.0))
             ca = float(request.args["community_area"])
             month = request.args["month"]
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             return jsonify(
                 {
                     "error": "bad_request",

@@ -87,6 +87,20 @@ def drop_redundant_columns(df):
         df = df.drop(columns=['location'])
     return df
 
+def remove_invalid_coordinates(df):
+    """Remove rows with coordinates outside of valid Chicago bounds."""
+    print("\nRemoving rows with invalid coordinates...")
+    
+    initial_count = len(df)
+    valid_lat = df['latitude'].between(*VALID_LAT_RANGE)
+    valid_lon = df['longitude'].between(*VALID_LON_RANGE)
+    
+    df = df[valid_lat & valid_lon]
+    
+    final_count = len(df)
+    print(f"Records: {initial_count:,} → {final_count:,} ({initial_count - final_count:,} removed)")
+    return df
+
 # ── Validation & Reporting ────────────────────────────────────────────────────
 def print_missing_summary(df, label=""):
     """Print missing value summary."""
@@ -106,32 +120,6 @@ def print_missing_summary(df, label=""):
         print(display_summary.to_string())
     
     return summary
-
-def validate_coordinates(df):
-    """Report on coordinate validity (but don't drop yet)."""
-    print("\nCoordinate validation:")
-    print("-" * 60)
-    
-    invalid_lat = ~df['latitude'].between(*VALID_LAT_RANGE)
-    invalid_lon = ~df['longitude'].between(*VALID_LON_RANGE)
-    null_lat = df['latitude'].isnull()
-    null_lon = df['longitude'].isnull()
-    
-    print(f"Valid Chicago latitude range:  {VALID_LAT_RANGE}")
-    print(f"Valid Chicago longitude range: {VALID_LON_RANGE}\n")
-    
-    print(f"Invalid latitude:  {invalid_lat.sum():,} total")
-    print(f"  - Null values:   {null_lat.sum():,}")
-    print(f"  - Out of range:  {(invalid_lat.sum() - null_lat.sum()):,}\n")
-    
-    print(f"Invalid longitude: {invalid_lon.sum():,} total")
-    print(f"  - Null values:   {null_lon.sum():,}")
-    print(f"  - Out of range:  {(invalid_lon.sum() - null_lon.sum()):,}\n")
-    
-    print("Note: Not dropping these observations yet.")
-    print("      Further analysis recommended before deciding.")
-    
-    return df
 
 def print_data_overview(df):
     """Print basic data overview."""
@@ -165,11 +153,11 @@ def main():
     df = convert_types(df)
     df = extract_temporal_features(df)
     df = remove_na_coordinates(df)
+    df = remove_invalid_coordinates(df)
     df = drop_redundant_columns(df)
     
     # Validate & Report
     print_missing_summary(df, "Missing Values After Type Conversion:")
-    validate_coordinates(df)
     print_data_overview(df)
     
     # Save

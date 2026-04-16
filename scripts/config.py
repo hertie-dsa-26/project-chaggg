@@ -31,8 +31,8 @@ EXPECTED_COLUMNS = [
 ]
 
 # ── Data Filters ──────────────────────────────────────────────────────────────
-VALID_LAT_RANGE = (41.6, 42.1)
-VALID_LON_RANGE = (-87.9, -87.5)
+VALID_LAT_RANGE = (41.624851, 42.07436)
+VALID_LON_RANGE = (-87.968437, -87.397217)
 YEAR_RANGE = (2002, 2025)
 
 # ── Create Directories ────────────────────────────────────────────────────────
