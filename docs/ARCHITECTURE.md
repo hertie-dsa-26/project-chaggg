@@ -7,7 +7,7 @@ Bu belge **Architecture & Design (rubric)** için yüksek seviye tasarımı öze
 | Katman | Konum | Görev |
 |--------|--------|--------|
 | Ham veri → temiz CSV/parquet | `scripts/fetch.py`, `scripts/clean.py`, `scripts/utils.py`, `scripts/config.py` | İndirme, filtreleme, tip dönüşümü; `load_data` tek giriş noktası |
-| Algoritmalar (from-scratch + yardımcılar) | `src/algorithms/` | KD-tree, KNN, metrikler, monthly aggregation (modül bazında ayrık) |
+| Algoritmalar (from-scratch + yardımcılar) | `src/algorithms/` | KD-tree, KNN, metrikler, monthly aggregation |
 | Batch / CLI | `scripts/run_*.py` | KNN prep & forecast, pipeline `main.py` |
 | Web | `src/flask_app/` | Flask app factory, şablonlar, statik GeoJSON, KNN yolları (`knn_paths.py`) |
 

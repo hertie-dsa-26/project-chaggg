@@ -19,7 +19,7 @@ uv run ruff format --check src tests
 CHAGGG_SKIP_DATA_LOAD=1 uv run python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-Coverage (`src/`, DBSCAN modülü rapor dışı; eşik `pyproject.toml` içinde):
+Coverage (`src/`; eşik `pyproject.toml` içinde):
 
 ```bash
 CHAGGG_SKIP_DATA_LOAD=1 uv run coverage erase

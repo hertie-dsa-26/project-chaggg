@@ -16,7 +16,7 @@ def filter_valid_coordinates(df, lat_col="latitude", lon_col="longitude"):
     """
     Keep rows with non-null latitude/longitude inside Chicago bounds from config.
 
-    Use this before spatial clustering (DBSCAN) or KNN on geographic coordinates.
+    Use this before spatial clustering or KNN on geographic coordinates.
     """
     lat_ok = df[lat_col].between(*VALID_LAT_RANGE)
     lon_ok = df[lon_col].between(*VALID_LON_RANGE)
@@ -40,7 +40,7 @@ def load_spatial_subset(
     prefer_parquet : bool
         Passed to load_data.
     n_sample : int | None
-        If set, draw this many rows after filtering (for heavy DBSCAN experiments).
+        If set, draw this many rows after filtering (for heavy clustering experiments).
     random_state : int
         RNG seed when n_sample is used.
     """

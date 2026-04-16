@@ -1,1 +1,1 @@
-# Algorithms package (KNN, DBSCAN hotspots, etc.)
+# Algorithms package (KNN, KD-tree, metrics, etc.)
