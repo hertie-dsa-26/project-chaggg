@@ -18,6 +18,7 @@ env/
 
 # Local outputs / artifacts
 outputs/
+*.pid
 
 # Avoid ignoring all HTML since Flask templates are HTML.
 # Keep ignoring specific generated HTML files explicitly instead.
@@ -36,6 +37,8 @@ instance/
 
 # Local tooling
 .tools/
+
+htmlcov/
 
 # Personal notes (keep local)
 GASYA_NOTLAR.md

@@ -1,6 +1,33 @@
 # Chicago Crime Analysis Project
 
-This repository is for a group project for the Data Structures and Algorithms Course taught at the Hertie School in Berlin. 
+[![CI](https://github.com/hertie-dsa-26/project-chaggg/actions/workflows/ci.yml/badge.svg)](https://github.com/hertie-dsa-26/project-chaggg/actions/workflows/ci.yml)
+
+This repository is for a group project for the Data Structures and Algorithms Course taught at the Hertie School in Berlin.
+
+## Documentation
+
+- **[Architecture](docs/ARCHITECTURE.md)** — modules, data flow, design tradeoffs (rubric: Architecture & Design).
+- **[Contributing](docs/CONTRIBUTING.md)** — branches, PRs, local checks, CI (rubric: Development Process).
+- **[Rubric mapping](docs/RUBRIC_MAPPING.md)** — rubric maddeleri ↔ repodaki kanıtlar (review / savunma için).
+
+## Testing
+
+```bash
+uv sync --all-groups
+uv run ruff check src tests
+uv run ruff format --check src tests
+CHAGGG_SKIP_DATA_LOAD=1 uv run python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+Coverage (`src/`, DBSCAN modülü rapor dışı; eşik `pyproject.toml` içinde):
+
+```bash
+CHAGGG_SKIP_DATA_LOAD=1 uv run coverage erase
+uv run coverage run -m unittest discover -s tests -p "test_*.py" -q
+uv run coverage report
+```
+
+Pull requests run the same tests in GitHub Actions (see `.github/workflows/ci.yml`).
 
 ## Project Overview
 

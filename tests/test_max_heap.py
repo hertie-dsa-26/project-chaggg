@@ -233,7 +233,7 @@ class TestKNNRegression:
         query = [2.5, 2.5]
         k = 3
         distances = sorted(
-            (euclidean_distance(f, query), t) for f, t in zip(self.X, self.y, strict=False)
+            (euclidean_distance(f, query), t) for f, t in zip(self.X, self.y, strict=True)
         )
         kth_dist = distances[k - 1][0]
 
