@@ -7,7 +7,10 @@ Common usage:
 """
 import pandas as pd
 import os
-from config import *
+try:
+    from .config import *  # When imported as a module (Flask)
+except ImportError:
+    from config import * # When run directly from scripts/
 
 def filter_valid_coordinates(df, lat_col="latitude", lon_col="longitude"):
     """
