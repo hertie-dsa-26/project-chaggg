@@ -12,23 +12,24 @@ try:
 except ImportError:
     from config import * # When run directly from scripts/
 
-def load_data(prefer_parquet=True):
+def load_data(prefer_parquet=True, columns = None):
     """
     Load cleaned Chicago crime data.
     
     Args:
         prefer_parquet: If True and parquet exists, load that. Otherwise CSV.
+        columns: List of columns to load. If None, load all columns.
     
     Returns:
         pandas.DataFrame containing cleaned crime data
     """
     if prefer_parquet and os.path.exists(CLEANED_PARQUET):
         print(f"Loading from {CLEANED_PARQUET}...")
-        return pd.read_parquet(CLEANED_PARQUET)
+        return pd.read_parquet(CLEANED_PARQUET, columns=columns) 
     
     if os.path.exists(CLEANED_CSV):
         print(f"Loading from {CLEANED_CSV}...")
-        return pd.read_csv(CLEANED_CSV, low_memory=False)
+        return pd.read_csv(CLEANED_CSV, low_memory=False, usecols=columns)
     
     raise FileNotFoundError(
         f"No cleaned data found. Please run clean.py first.\n"
