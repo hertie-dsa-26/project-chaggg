@@ -1,8 +1,8 @@
 import sys, os
 import pytest
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'algorithms'))
 
-from utils import haversine, cyclical_distance, temporal_distance, combined_distance
+from distance import haversine, cyclical_distance, temporal_distance, combined_distance
 
 #distance between same points in Chicago is 0km
 def test_haversine_identical_points():
