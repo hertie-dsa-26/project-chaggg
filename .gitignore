@@ -28,9 +28,28 @@ instance/
 .vscode/
 .idea/
 
+# Local outputs / artifacts
+outputs/
+*.log
+*.pid
+.coverage
+htmlcov/
+# Avoid ignoring all HTML since Flask templates are HTML.
+# Keep ignoring specific generated HTML files explicitly instead.
+
 # Local tooling
 .tools/
 
+# Personal notes (keep local)
+GASYA_NOTLAR.md
+PR_MEETING_SUMMARY.md
+PR_MEETING_SUMMARY.html
+
+# Local / experimental scripts not part of current tasks
+scripts/download_chicago_crimes.py
+
+# Generated Flask demo artifacts (exported GeoJSON, etc.)
+src/flask_app/static/geo/generated/
 # Data artifacts (large / local-only)
 data/
 data/**/*.csv

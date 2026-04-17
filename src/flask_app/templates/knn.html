@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}KNN forecast · Chicago Crime Analysis{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+    body .container { max-width: 1100px; }
+    .knn-layout { max-width: 1100px; margin: 0 auto; }
+    .knn-form { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 1rem; }
+    .knn-form label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted); }
+    .knn-form select { background: var(--bg-dark); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.6rem; font-family: inherit; min-width: 8rem; }
+    .knn-metrics { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; }
+    .knn-metrics strong { color: var(--text); }
+    #knn-map { height: 420px; border-radius: 8px; border: 1px solid var(--border); margin-top: 1rem; }
+    table.knn-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 1rem; }
+    table.knn-table th, table.knn-table td { border: 1px solid var(--border); padding: 0.45rem 0.5rem; text-align: right; }
+    table.knn-table th:first-child, table.knn-table td:first-child { text-align: left; }
+    table.knn-table th { background: var(--bg-card); color: var(--text-muted); font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="knn-layout">
+<h2>KNN: monthly crime count (community area)</h2>
+<p>Test window 2023–2024. Predictions from saved runs (<code>outputs/knn/forecast_predictions_k*.csv</code>).</p>
+
+{% if not available %}
+<div class="card">
+    <p><strong>No KNN outputs found.</strong> From repo root run:</p>
+    <pre style="overflow:auto;background:var(--bg-dark);padding:1rem;border-radius:6px;font-size:0.8rem;">uv run python scripts/run_knn_prep.py / --write-split
+uv run python scripts/run_knn_forecast.py --k 5,10,20 --space meters</pre>
+</div>
+{% else %}
+
+<div class="card">
+    <form class="knn-form" method="get" action="/viz/knn">
+        <label>K (neighbors)
+            <select name="k" onchange="this.form.submit()">
+                <option value="5" {% if k == 5 %}selected{% endif %}>5</option>
+                <option value="10" {% if k == 10 %}selected{% endif %}>10</option>
+                <option value="20" {% if k == 20 %}selected{% endif %}>20</option>
+            </select>
+        </label>
+        <label>Month (test)
+            <select name="month" onchange="this.form.submit()">
+                {% for m in months %}
+                <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit" class="btn" style="border:none;cursor:pointer;">Apply</button>
+    </form>
+    {% if k_metrics %}
+    <p class="knn-metrics">Hold-out metrics (full test set, <code>time_scale=0</code>): <strong>MAE {{ "%.4f"|format(k_metrics.mae|float) }}</strong>, <strong>RMSE {{ "%.4f"|format(k_metrics.rmse|float) }}</strong></p>
+    {% endif %}
+    <div id="knn-map"></div>
+    {% if rows %}
+    <table class="knn-table">
+        <thead>
+            <tr>
+                <th>Community area</th>
+                <th>Month</th>
+                <th>Actual</th>
+                <th>Predicted</th>
+                <th>|error|</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td>{{ r.community_area }}</td>
+                <td>{{ r.month }}</td>
+                <td>{{ "%.1f"|format(r.crime_count|float) }}</td>
+                <td>{{ "%.1f"|format(r.predicted_crime_count|float) }}</td>
+                <td>{{ "%.1f"|format((r.crime_count|float - r.predicted_crime_count|float)|abs) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No rows for this month.</p>
+    {% endif %}
+</div>
+
+{% endif %}
+
+<a href="/" class="btn btn-secondary">← Home</a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if available and map_points %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function () {
+  const pts = {{ map_points|tojson }};
+  const map = L.map('knn-map').setView([41.88, -87.63], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+  const bounds = [];
+  pts.forEach(function (p) {
+    const err = Math.abs(p.actual - p.pred);
+    const rad = Math.min(18, 4 + Math.sqrt(err));
+    const c = err > 40 ? '#ef4444' : err > 20 ? '#f59e0b' : '#22c55e';
+    const circle = L.circleMarker([p.lat, p.lon], { radius: rad, color: c, fillColor: c, fillOpacity: 0.55, weight: 1 });
+    circle.bindPopup('CA ' + p.ca + '<br>actual ' + p.actual.toFixed(1) + '<br>pred ' + p.pred.toFixed(1));
+    circle.addTo(map);
+    bounds.push([p.lat, p.lon]);
+  });
+  if (bounds.length) map.fitBounds(bounds, { padding: [24, 24] });
+})();
+</script>
+{% endif %}
+{% endblock %}

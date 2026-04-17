@@ -15,23 +15,73 @@ try:
 except ImportError:
     from config import * # When run directly from scripts/
 
-def load_data(prefer_parquet=True):
+def filter_valid_coordinates(df, lat_col="latitude", lon_col="longitude"):
+    """
+    Keep rows with non-null latitude/longitude inside Chicago bounds from config.
+
+    Use this before spatial clustering or KNN on geographic coordinates.
+    """
+    lat_ok = df[lat_col].between(*VALID_LAT_RANGE)
+    lon_ok = df[lon_col].between(*VALID_LON_RANGE)
+    mask = df[lat_col].notna() & df[lon_col].notna() & lat_ok & lon_ok
+    return df.loc[mask].copy()
+
+
+def load_spatial_subset(
+    columns=None,
+    prefer_parquet=True,
+    n_sample=None,
+    random_state=42,
+):
+    """
+    Load cleaned data with valid coordinates only.
+
+    Parameters
+    ----------
+    columns : list[str] | None
+        If set, return only these columns (plus lat/lon if omitted but needed).
+    prefer_parquet : bool
+        Passed to load_data.
+    n_sample : int | None
+        If set, draw this many rows after filtering (for heavy clustering experiments).
+    random_state : int
+        RNG seed when n_sample is used.
+    """
+    read_cols = None
+    if columns is not None:
+        read_cols = list(dict.fromkeys(list(columns) + ["latitude", "longitude"]))
+    df = load_data(prefer_parquet=prefer_parquet, columns=read_cols)
+    df = filter_valid_coordinates(df)
+    if columns is not None:
+        cols = list(dict.fromkeys(list(columns) + ["latitude", "longitude"]))
+        cols = [c for c in cols if c in df.columns]
+        df = df[cols]
+    if n_sample is not None and len(df) > n_sample:
+        df = df.sample(n=n_sample, random_state=random_state)
+    return df.reset_index(drop=True)
+
+
+def load_data(prefer_parquet=True, columns=None):
     """
     Load cleaned Chicago crime data.
-    
+
     Args:
         prefer_parquet: If True and parquet exists, load that. Otherwise CSV.
-    
+        columns: Optional list of columns to read (much faster for huge CSV).
+
     Returns:
         pandas.DataFrame containing cleaned crime data
     """
     if prefer_parquet and os.path.exists(CLEANED_PARQUET):
         print(f"Loading from {CLEANED_PARQUET}...")
-        return pd.read_parquet(CLEANED_PARQUET)
-    
+        return pd.read_parquet(CLEANED_PARQUET, columns=columns)
+
     if os.path.exists(CLEANED_CSV):
         print(f"Loading from {CLEANED_CSV}...")
-        return pd.read_csv(CLEANED_CSV, low_memory=False)
+        read_kwargs = {"low_memory": False}
+        if columns is not None:
+            read_kwargs["usecols"] = columns
+        return pd.read_csv(CLEANED_CSV, **read_kwargs)
     
     raise FileNotFoundError(
         f"No cleaned data found. Please run clean.py first.\n"
