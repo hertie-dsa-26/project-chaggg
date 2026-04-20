@@ -87,6 +87,7 @@ def add_cyclical_time_features(df):
         'day_of_week': 7,
         'month':       12,
         'day_of_year': 365,  # Approximate, doesn't account for leap years
+    }
 
     for col, period in cycles.items():
         df[f'{col}_sin'] = np.sin(2 * np.pi * df[col] / period)
