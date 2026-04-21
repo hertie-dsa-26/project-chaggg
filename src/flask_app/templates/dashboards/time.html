@@ -17,7 +17,7 @@
     margin-bottom: 1rem;
     color: var(--text);
   }
-  .chart-container canvas { width: 100% !important; }
+  .chart-container canvas { width: 100% !important; height: 280px !important; }
   .controls {
     display: flex;
     align-items: center;
@@ -69,12 +69,12 @@
 
 <div class="chart-container">
   <h3>Total Crime Incidents by Year (2002–2025)</h3>
-  <canvas id="yearChart" height="80"></canvas>
+  <canvas id="yearChart"></canvas>
 </div>
 
 <div class="chart-container">
   <h3>Average Crime Count by Month (Seasonality)</h3>
-  <canvas id="monthChart" height="80"></canvas>
+  <canvas id="monthChart"></canvas>
 </div>
 
 <div class="chart-container">
@@ -117,6 +117,7 @@
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: {

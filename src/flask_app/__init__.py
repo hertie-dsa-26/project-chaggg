@@ -63,34 +63,31 @@ def create_app():
         df = app.config["CRIME_DF"]
         crime_type = request.args.get("type", "ALL")
 
+        # crime types for dropdown (before filtering)
+        types = sorted(df["primary_type"].dropna().unique().tolist()) if crime_type == "ALL" else None
+
         if crime_type != "ALL":
             df = df[df["primary_type"] == crime_type]
 
         # chart 1: total by year
-        by_year = df.groupby("year").size().reset_index(name="count")
-        by_year = by_year.sort_values("year")
+        by_year = df.groupby("year").size().reset_index(name="count").sort_values("year")
 
         # chart 2: avg by month
-        monthly = df.groupby(["year", "month"]).size().reset_index(name="count")
-        avg_month = monthly.groupby("month")["count"].mean().round(0).reset_index()
-        avg_month = avg_month.sort_values("month")
+        avg_month = (
+            df.groupby(["year", "month"]).size().reset_index(name="count")
+            .groupby("month")["count"].mean().round(0).reset_index()
+            .sort_values("month")
+        )
 
         # chart 3: hour x day_of_week heatmap
         day_map = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
-        df_copy = df.copy()
-        df_copy["day_name"] = df_copy["day_of_week"].map(day_map)
-        heatmap = df_copy.groupby(["hour", "day_name"]).size().reset_index(name="count")
-        day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        matrix = []
-        for h in range(24):
-            row = []
-            for d in day_order:
-                val = heatmap[(heatmap["hour"] == h) & (heatmap["day_name"] == d)]
-                row.append(int(val["count"].values[0]) if len(val) > 0 else 0)
-            matrix.append(row)
-
-        # crime types for dropdown
-        types = sorted(df["primary_type"].dropna().unique().tolist()) if crime_type == "ALL" else None
+        day_order = list(day_map.values())
+        heatmap = (
+            df.assign(day_name=df["day_of_week"].map(day_map))
+            .groupby(["hour", "day_name"]).size().unstack(fill_value=0)
+            .reindex(index=range(24), columns=day_order, fill_value=0)
+        )
+        matrix = heatmap.values.tolist()
 
         result = {
             "by_year": {"years": by_year["year"].tolist(), "counts": by_year["count"].tolist()},
