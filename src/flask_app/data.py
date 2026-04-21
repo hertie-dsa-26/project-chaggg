@@ -19,15 +19,18 @@ DEFAULT_COLUMNS = [
 ]
 
 
-def load_crime_data() -> pd.DataFrame:
+def load_crime_data(columns=None) -> pd.DataFrame:
     """
     Load the Chicago crime dataset for the web app.
     
     Uses the cleaned data from the preprocessing pipeline.
     Falls back to empty DataFrame if data is not available.
+
+    Args:
+        columns: Optional list of columns to load. If None, loads all columns.
     """
     try:
-        return load_data(prefer_parquet=True)
+        return load_data(prefer_parquet=True, columns=columns)
     except FileNotFoundError:
         # Keep the app bootable even if cleaned data doesn't exist
         return pd.DataFrame(columns=DEFAULT_COLUMNS)
