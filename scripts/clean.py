@@ -8,6 +8,7 @@ Usage:
     python clean.py
 """
 import pandas as pd
+import numpy as np
 import os
 from config import *
 
@@ -67,16 +68,36 @@ def extract_temporal_features(df):
     df['month'] = df['date'].dt.month
     df['day'] = df['date'].dt.day
     df['day_of_week'] = df['date'].dt.dayofweek  # 0=Monday, 6=Sunday
+    df['day_of_year'] = df['date'].dt.dayofyear  # 1–365 (or 366 in leap years)
     
     # From time column (convert back to datetime to extract hour)
     df['hour'] = pd.to_datetime(df['time'], format='%H:%M:%S').dt.hour
+    df['minute'] = pd.to_datetime(df['time'], format='%H:%M:%S').dt.minute
     
-    print(f"  - Extracted: year, month, day, hour, day_of_week")
+    print(f"  - Extracted: year, month, day, hour, minute, day_of_week, day_of_year")
     
     return df
 
+def add_cyclical_time_features(df):
+    """Encode cyclical time features using sine/cosine transformation."""
+    print("\nAdding cyclical time features...")
+
+    cycles = {
+        'hour':        24,
+        'day_of_week': 7,
+        'month':       12,
+        'day_of_year': 365,  # Approximate, doesn't account for leap years
+    }
+
+    for col, period in cycles.items():
+        df[f'{col}_sin'] = np.sin(2 * np.pi * df[col] / period)
+        df[f'{col}_cos'] = np.cos(2 * np.pi * df[col] / period)
+        print(f"  - {col}_sin, {col}_cos (period={period})")
+
+    return df
+
 def remove_na_coordinates(df):
-    print("Removing rows with NaN values in longitude and latitude...")
+    print("\nRemoving rows with NaN values in longitude and latitude...")
     return df.dropna(subset=['longitude', 'latitude'])
 
 def drop_redundant_columns(df):
@@ -152,6 +173,7 @@ def main():
     df = filter_years(df)
     df = convert_types(df)
     df = extract_temporal_features(df)
+    df = add_cyclical_time_features(df)
     df = remove_na_coordinates(df)
     df = remove_invalid_coordinates(df)
     df = drop_redundant_columns(df)
