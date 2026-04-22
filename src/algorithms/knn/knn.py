@@ -29,7 +29,7 @@ import csv
 import datetime
 import numpy as np
 
-from .distance import combined_distance
+from algorithms.distance import combined_distance
 
 
 EPSILON = 1e-6        # Guard against division by zero for exact distance matches
