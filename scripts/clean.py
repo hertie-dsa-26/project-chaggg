@@ -50,6 +50,13 @@ def convert_types(df):
     df["district"] = pd.to_numeric(df["district"], errors="coerce").astype("Int64")
     df["ward"] = pd.to_numeric(df["ward"], errors="coerce").astype("Int64")
     df["community_area"] = pd.to_numeric(df["community_area"], errors="coerce").astype("Int64")
+
+    # ── Fix known typos before encoding as categorical ──────────────────
+    print("  - Fixing primary_type typos...")
+    PRIMARY_TYPE_FIXES = {
+        "CRIM SEXUAL ASSAULT": "CRIMINAL SEXUAL ASSAULT",
+    }
+    df["primary_type"] = df["primary_type"].replace(PRIMARY_TYPE_FIXES)
     
     # Categorical encoding for memory efficiency
     print("  - Encoding categorical columns...")
