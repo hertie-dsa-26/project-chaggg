@@ -65,4 +65,4 @@ def preprocess_data():
     incident_df['arrest'] = incident_df['at_least_one_arrested'].astype(int) # Encode target!
     incident_df = incident_df.groupby('primary_type').filter(lambda x: len(x) >= 5000) # Cut off every 'primary_type' with < 5k rows
 
-    return(incident_df)
+    return incident_df
