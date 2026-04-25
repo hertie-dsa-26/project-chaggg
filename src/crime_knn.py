@@ -15,7 +15,8 @@ def select_crime(crime:str = None):
     df = preprocess_data()
 
     if crime is None:
-        response = pyip.inputMenu(df['primary_type'].unique())
+        choices = df['primary_type'].unique().tolist()
+        response = pyip.inputMenu(choices)
 
         if response not in df['primary_type'].unique():
             ValueError('Primary type not included in catalogue.')
