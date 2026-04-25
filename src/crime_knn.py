@@ -97,7 +97,7 @@ def knn_lrr(query: list, crime_type: str = None) -> list:
 
     print(f"Intercept   : {beta[0]:.6f}")
     print(f"Coefficients: {beta[1:]}")
-    print(f"\nPredicted arrest probability for query: {y_hat_logit:.4f}")
+    print(f"\nPredicted probability of arrest for query: {y_hat_logit*100:.2f}%")
 
     if y_hat_logit <= 0.49:
         print('Most likely scenario: will not get arrested.')
