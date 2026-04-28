@@ -19,7 +19,28 @@ def select_crime(crime:str = None):
         response = pyip.inputMenu(choices)
 
         if response not in df['primary_type'].unique():
-            ValueError('Primary type not included in catalogue.')
+
+def select_crime(crime: str = None):
+
+    df = preprocess_data()
+    valid_types = df['primary_type'].unique()
+
+    if crime is None:
+        choices = valid_types.tolist()
+        response = pyip.inputMenu(choices)
+        # pyip.inputMenu already guarantees a valid choice, no check needed
+    else:
+        if crime not in valid_types:
+            raise ValueError(f"Primary type '{crime}' not included in catalogue.")
+        response = crime
+
+    df = df[df['primary_type'] == response]
+    df = df.reset_index(drop=True)
+
+    print('Filter applied.')
+    print(f'{df.shape[0]} observations found for selected primary crime type.')
+
+    return df
 
         df = df[df['primary_type'] == f'{response}']
         df = df.reset_index(drop=True)
