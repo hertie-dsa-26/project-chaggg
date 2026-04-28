@@ -108,7 +108,7 @@ def knn_lrr(query: list, crime_type: str = None) -> list:
 
     if y_hat_logit <= 0.49:
         print('Most likely scenario: will not get arrested.')
-    elif y_hat_logit == 0.5:
+    elif 0.49 < y_hat_logit < 0.51:
         print('Most likely scenario: toss a (fair) coin.')
     else:
         print('Most likely scenario: will get arrested.')
