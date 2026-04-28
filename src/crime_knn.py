@@ -38,11 +38,9 @@ def knn_lrr(query: list, crime_type: str = None) -> list:
 
     crime = select_crime(crime = crime_type)
 
-    features = crime['latitude', 'longitude', \
-                     'hour_sin', 'hour_cos',
-                     'day_of_week_sin', 'day_of_week_cos',
-                     'month_sin', 'month_cos',
-                     'day_of_year_sin', 'day_of_year_cos']
+    features = crime['latitude', 'longitude', 'hour_sin', 'hour_cos',
+                     'day_of_week_sin', 'day_of_week_cos', 'month_sin',
+                     'month_cos', 'day_of_year_sin', 'day_of_year_cos']
                       
     label = crime['arrest']
 
