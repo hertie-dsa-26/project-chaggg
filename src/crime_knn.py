@@ -50,9 +50,9 @@ def knn_lrr(query: list, crime_type: str = None) -> list:
     label = label.to_numpy().astype(float)
 
     # 1. Standardize features (fit on X_local, apply same transform to query)
-    features_mean = X.mean(axis=0)
-    features_std  = X.std(axis=0) + 1e-8
-    features_scaled = (X - features_mean) / features_std
+    features_mean = features.mean(axis=0)
+    features_std  = features.std(axis=0) + 1e-8
+    features_scaled = (features - features_mean) / features_std
 
     # 2. Augment with intercept column
     n, p = features_scaled.shape
