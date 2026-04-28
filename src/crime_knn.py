@@ -69,7 +69,9 @@ def knn_lrr(query: list, crime_type: str = None) -> list:
 
     heap = MaxHeap(capacity= k)
 
-    for idx, row in pd.DataFrame(features_aug).iterrows():
+    features_aug = pd.DataFrame(features_aug).astype(float)
+
+    for idx, row in features_aug.iterrows():
         dist = euclidean_distance(row.tolist(), query_aug.tolist())
         heap.add(dist, float(idx))
         neighbour_indices = [int(target) for _, target in heap.get_all()]
