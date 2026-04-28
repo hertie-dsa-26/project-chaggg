@@ -80,6 +80,7 @@ def knn_lrr(query: list, crime_type: str = None) -> list:
     print('Running Logistic Ridge Regression.')
 
     X_local = features_aug.iloc[neighbour_indices,:]
+    y_local = pd.Series(label)
     y_local = label.loc[neighbour_indices]
 
     # --- Logistic Ridge Regression ---
