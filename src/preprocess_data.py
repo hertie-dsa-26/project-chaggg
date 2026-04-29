@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
 import sys, os
+
+sys.path.insert(0, os.path.abspath('..')) 
 from scripts.utils import load_data
 
-#===================================
 # --- Preprocess data
-#===================================
+
 def preprocess_data():
 
     df = load_data()
@@ -15,7 +16,7 @@ def preprocess_data():
     # -- Collapse: one row per incident
     # For most columns, take the first value (they should be the same across rows of the same incident)
     # For 'arrest', take max — True if ANY person was arrested (your binary variable)
-    incident_df = df.groupby('case_number').agg(
+    df = df.groupby('case_number').agg(
     id=('id', 'first'),
     date=('date', 'first'),
     block=('block', 'first'),
@@ -55,12 +56,12 @@ def preprocess_data():
 
     # -- Attach people_involved
 
-    incident_df = incident_df.merge(people_per_incident, on='case_number')
+    df = df.merge(people_per_incident, on='case_number')
 
     # -- Final cleaning decisions
 
-    incident_df = incident_df[incident_df['people_involved'] == 1]  # Drop any incident with more than one person involved
-    incident_df['arrest'] = incident_df['at_least_one_arrested'].astype(int) # Encode target!
-    incident_df = incident_df.groupby('primary_type').filter(lambda x: len(x) >= 5000) # Cut off every 'primary_type' with < 5k rows
+    df = df[df['people_involved'] == 1]  # Drop any incident with more than one person involved
+    df['arrest'] = df['at_least_one_arrested'].astype(int) # Encode target!
+    df = df.groupby('primary_type').filter(lambda x: len(x) >= 5000) # Cut off every 'primary_type' with < 5k rows
 
-    return(incident_df)
+    return df
