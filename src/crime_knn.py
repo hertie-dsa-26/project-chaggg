@@ -74,7 +74,8 @@ def knn_lrr(query: list, crime_type: str = None) -> list:
     for idx, row in features_aug.iterrows():
         dist = euclidean_distance(row.tolist(), query_aug.tolist())
         heap.add(dist, float(idx))
-        neighbour_indices = [int(target) for _, target in heap.get_all()]
+        
+    neighbour_indices = [int(target) for _, target in heap.get_all()]
 
     print(f'{k} nearest neighbours found.')
     print('Running Logistic Ridge Regression.')
@@ -95,7 +96,7 @@ def knn_lrr(query: list, crime_type: str = None) -> list:
 
     for _ in range(n_iter):
         p_hat = sigmoid(X_local @ beta)                    # predicted probabilities
-        grad  = (X_local.T @ (p_hat - y_local)) / n             # cross-entropy gradient
+        grad  = (X_local.T @ (p_hat - y_local)) / len(y_local)             # cross-entropy gradient
         grad[1:] += alpha * beta[1:]                     # L2 penalty (skip intercept)
         beta -= lr * grad
 
@@ -115,6 +116,7 @@ def knn_lrr(query: list, crime_type: str = None) -> list:
 
     return y_hat_logit
 
+# this part will change once we implement the algorithm into flask, leaving it for now
 def main():
     print("="*60)
     print(' K-nearest-neigbours Logistic Ridge Regression')
