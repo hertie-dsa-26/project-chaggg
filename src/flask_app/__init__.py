@@ -28,9 +28,21 @@ def create_app():
     def index():
         return render_template("index.html")
 
+    @app.route("/method")
+    def method():
+        return render_template("method.html")
+
+    @app.route("/algorithm")
+    def algorithm():
+        return render_template("algorithm.html")
+
     @app.route("/about")
     def about():
         return render_template("about.html")
+    
+    @app.route("/overview")
+    def overview():
+        return render_template("overview.html")
 
     @app.route("/viz/placeholder")
     def viz_placeholder():
@@ -49,13 +61,10 @@ def create_app():
             "dashboards/space.html",
             rows=len(app.config["CRIME_DF"]),
         )
-
-    @app.route("/dashboards/types")
-    def dashboard_types():
-        return render_template(
-            "dashboards/types.html",
-            rows=len(app.config["CRIME_DF"]),
-        )
+    
+    @app.route("/dashboards")
+    def dashboards():
+        return render_template("dashboards.html")
     
     @app.route("/api/temporal")
     def api_temporal():

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Algorithm · Chicago Crime Analysis{% endblock %}
+{% block nav_algorithm %}active{% endblock %}
+
+{% block content %}
+<div class="page-meta">
+  <span>Section · Algorithm</span>
+  <span>chicago_crime.db // algorithm</span>
+</div>
+
+<!-- ROW 1: Baseline -->
+<div class="page-row">
+  <section class="page-section">
+    <div class="page-eyebrow">section · 01</div>
+    <h2>baseline</h2>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Start with the simplest model that could plausibly answer the question. This section describes our baseline approach — what features go in, what comes out, and how to read the predictions.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Feature set, target variable, train/test split strategy, and headline performance metric. Brief note on why we chose this baseline rather than a more complex model.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Where the baseline succeeds and where it fails — concrete examples from the test set.
+    </p>
+  </section>
+
+  <a href="#" class="page-jump" style="opacity: 0.5; cursor: not-allowed;">
+    <div class="page-jump-num">→ 01</div>
+    <div class="page-jump-title">baseline notebook</div>
+    <div class="page-jump-desc">
+      Code, training run, and full results for the baseline model.
+    </div>
+    <div class="page-jump-arrow">coming soon ↗</div>
+  </a>
+</div>
+
+<!-- ROW 2: Improvements -->
+<div class="page-row">
+  <section class="page-section">
+    <div class="page-eyebrow">section · 02</div>
+    <h2>how we improve</h2>
+    <p>
+      <span class="placeholder">placeholder</span>
+      What did the baseline miss, and how do we fix it? This section documents each iteration — the diagnostic that motivated it, the change we made, and what improved.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Specific improvements (feature engineering, model class, hyperparameter tuning), with before/after metrics so the reader can see the gain attributable to each change.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Honest assessment of what's still broken, and what we would try next given more time.
+    </p>
+  </section>
+
+  <a href="#" class="page-jump" style="opacity: 0.5; cursor: not-allowed;">
+    <div class="page-jump-num">→ 02</div>
+    <div class="page-jump-title">results dashboard</div>
+    <div class="page-jump-desc">
+      Model output, predictions, and community-area level insights.
+    </div>
+    <div class="page-jump-arrow">coming soon ↗</div>
+  </a>
+</div>
+{% endblock %}

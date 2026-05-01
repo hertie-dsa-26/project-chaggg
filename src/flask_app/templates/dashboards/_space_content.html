@@ -1,0 +1,142 @@
+{# Partial: spatial dashboard content. Used by dashboards/space.html and the merged dashboards page. #}
+
+<style>
+  .map-wrapper {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    position: relative;
+    height: 75vh;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  #map { height: 100%; width: 100%; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .year-control {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(15,20,25,0.9); padding: 10px 14px;
+    border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    font: 13px/1.6 'DM Sans', sans-serif; color: #e2e8f0;
+    z-index: 1000; width: 320px;
+  }
+  .year-control label { display: block; text-align: center; margin-bottom: 6px; font-weight: 600; }
+  .year-control #yearValue { color: #3b82f6; font-size: 14px; }
+  .year-control input[type=range] { width: 100%; }
+  .legend {
+    background: rgba(15,20,25,0.9); padding: 10px 14px;
+    border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    font: 13px/1.6 'DM Sans', sans-serif; color: #e2e8f0;
+  }
+  .legend h4 { margin: 0 0 6px; font-size: 13px; }
+  .legend i { display: inline-block; width: 18px; height: 10px; margin-right: 6px; border-radius: 2px; }
+  .leaflet-popup-content-wrapper { background: #1a2332; color: #e2e8f0; border-radius: 6px; }
+  .leaflet-popup-tip { background: #1a2332; }
+  .leaflet-popup-content { font-family: 'DM Sans', sans-serif; }
+  .leaflet-popup-content hr { border-color: #334155; }
+</style>
+
+<div class="map-wrapper">
+  <div id="map"></div>
+  <div class="year-control">
+    <label>Year: <span id="yearValue">2002</span></label>
+    <input type="range" id="yearSlider" min="2002" max="2025" value="2002" step="1">
+  </div>
+</div>
+
+<script>
+(function() {
+  const map = L.map('map').setView([41.8781, -87.6298], 11);
+  map.createPane('labels');
+  map.getPane('labels').style.zIndex = 650;
+  map.getPane('labels').style.pointerEvents = 'none';
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
+  }).addTo(map);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, pane: 'labels'
+  }).addTo(map);
+
+  let clusterLayer, heatLayer, boundaryLayer;
+  let pointsByYear = {}, statsByYear = {}, geojsonData = null;
+
+  function renderYear(year) {
+    if (clusterLayer) map.removeLayer(clusterLayer);
+    if (heatLayer) map.removeLayer(heatLayer);
+    if (boundaryLayer) map.removeLayer(boundaryLayer);
+
+    const points = pointsByYear[year] || [];
+    const stats = statsByYear[year] || {};
+
+    clusterLayer = L.markerClusterGroup();
+    points.forEach(([lat, lon, type]) => {
+      const m = L.circleMarker([lat, lon], { radius: 3, color: '#e74c3c', fillOpacity: 0.6, weight: 0 });
+      m.bindPopup(type);
+      clusterLayer.addLayer(m);
+    });
+    map.addLayer(clusterLayer);
+
+    const heatData = points.map(([lat, lon]) => [lat, lon, 0.4]);
+    heatLayer = L.heatLayer(heatData, {
+      radius: 12, blur: 18, maxZoom: 15, minOpacity: 0.03, max: 1.0,
+      gradient: { 0.0: 'rgba(0,0,0,0)', 0.2: 'rgba(26,152,80,0.4)', 0.35: 'rgba(145,207,96,0.5)',
+                  0.5: 'rgba(217,239,139,0.5)', 0.65: 'rgba(254,224,139,0.5)',
+                  0.8: 'rgba(252,141,89,0.6)', 0.95: 'rgba(215,48,39,0.7)', 1.0: 'rgba(165,0,38,0.8)' }
+    }).addTo(map);
+
+    boundaryLayer = L.geoJSON(geojsonData, {
+      style: { color: 'rgba(148,163,184,0.5)', weight: 1.2, fillOpacity: 0.01, opacity: 0.7 },
+      onEachFeature: (feature, layer) => {
+        const areaNum = feature.properties.area_numbe;
+        const name = feature.properties.community;
+        const s = stats[areaNum];
+        if (s) {
+          const top3 = s.top3.map(([t, c]) => `<li>${t}: ${c.toLocaleString()}</li>`).join('');
+          layer.bindPopup(`
+            <div style="min-width:180px">
+              <strong style="font-size:14px;color:#3b82f6">${name}</strong><br>
+              <span>Year ${year} Total: ${s.total.toLocaleString()}</span>
+              <hr style="margin:4px 0">
+              <strong>Top 3 Types:</strong>
+              <ol style="margin:4px 0 0 16px;padding:0">${top3}</ol>
+            </div>`);
+        }
+        layer.on('mouseover', () => { layer.setStyle({ weight: 2.5, color: '#3b82f6', fillOpacity: 0.08 }); layer.bringToFront(); });
+        layer.on('mouseout', () => boundaryLayer.resetStyle(layer));
+      }
+    }).addTo(map);
+
+    boundaryLayer.bringToFront();
+  }
+
+  Promise.all([
+    fetch('/static/data/space/sampled_points_by_year.json').then(r => r.json()),
+    fetch('/static/data/space/community_stats_by_year.json').then(r => r.json()),
+    fetch('/static/data/space/chicago_community_areas.geojson').then(r => r.json())
+  ]).then(([pts, stats, geo]) => {
+    pointsByYear = pts; statsByYear = stats; geojsonData = geo;
+    renderYear('2002');
+
+    const slider = document.getElementById('yearSlider');
+    const label = document.getElementById('yearValue');
+    slider.addEventListener('input', (e) => {
+      const y = e.target.value;
+      label.textContent = y;
+      renderYear(y);
+    });
+
+    const legend = L.control({ position: 'bottomright' });
+    legend.onAdd = () => {
+      const div = L.DomUtil.create('div', 'legend');
+      div.innerHTML = `<h4>Crime Density</h4>
+        <div><i style="background:#1a9850"></i>Low</div>
+        <div><i style="background:#d9ef8b"></i>Medium-Low</div>
+        <div><i style="background:#fee08b"></i>Medium</div>
+        <div><i style="background:#fc8d59"></i>Medium-High</div>
+        <div><i style="background:#d73027"></i>High</div>
+        <div><i style="background:#a50026"></i>Very High</div>`;
+      return div;
+    };
+    legend.addTo(map);
+  });
+})();
+</script>
