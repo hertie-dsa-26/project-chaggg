@@ -4,6 +4,7 @@ Flask application for Chicago Crime Analysis.
 from flask import Flask, render_template
 
 from .data import load_crime_data
+from .load_crime_artifacts import load_knn_arrays
 
 
 def create_app():
@@ -23,6 +24,15 @@ def create_app():
     print(f"{'='*50}\n")
 
     app.config["CRIME_DF"] = crime_df
+
+    # Load precomputed KNN artifacts
+    knn_artifacts = load_knn_arrays()
+    print(f"\n{'='*50}")
+    print(f"KNN ARTIFACTS LOADED: {len(knn_artifacts)} crime types")
+    for slug, artifact in sorted(knn_artifacts.items()):
+        print(f"  {slug:<40} n={artifact['label'].shape[0]:>7}")
+    print(f"{'='*50}\n")
+    app.config["KNN_ARTIFACTS"] = knn_artifacts
 
     @app.route("/")
     def index():
