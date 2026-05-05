@@ -26,12 +26,18 @@ def create_app():
     app.config["CRIME_DF"] = crime_df
 
     # Load precomputed KNN artifacts
-    knn_artifacts = load_knn_arrays()
-    print(f"\n{'='*50}")
-    print(f"KNN ARTIFACTS LOADED: {len(knn_artifacts)} crime types")
-    for slug, artifact in sorted(knn_artifacts.items()):
-        print(f"  {slug:<40} n={artifact['label'].shape[0]:>7}")
-    print(f"{'='*50}\n")
+    try:
+        knn_artifacts = load_knn_arrays()
+        print(f"\n{'='*50}")
+        print(f"KNN ARTIFACTS LOADED: {len(knn_artifacts)} crime types")
+        for slug, artifact in sorted(knn_artifacts.items()):
+            print(f"  {slug:<40} n={artifact['label'].shape[0]:>7}")
+        print(f"{'='*50}\n")
+    except FileNotFoundError:
+        knn_artifacts = {}
+        print(f"\n{'='*50}")
+        print("WARNING: KNN artifacts not found; continuing without precomputed bundles.")
+        print(f"{'='*50}\n")
     app.config["KNN_ARTIFACTS"] = knn_artifacts
 
     @app.route("/")
