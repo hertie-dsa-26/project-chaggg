@@ -6,19 +6,22 @@ regression pipeline in ``src/crime_knn.py``. For every crime ``primary_type``
 we fit ``sklearn.neighbors.KNeighborsClassifier`` on standardised
 ``(latitude, longitude)`` features only, tune ``k`` via stratified CV on the
 training set (candidates: 10, 25, 50, 100, 250) and report test-set
-log-loss and accuracy.
+log-loss, accuracy and ROC-AUC.
 
 The from-scratch requirement does not apply here — sklearn is allowed for
 the comparison baseline.
 
-Dependency note (issue: location-only KNN comparison model)
------------------------------------------------------------
-This script is meant to share data preparation with the from-scratch model.
-Until @ght-1's "Train/test split + standardization" PR lands on ``main``,
-the helpers below (``split_train_test_by_year`` and the inline
-``StandardScaler`` step) replicate the expected behaviour. When that PR
-merges, swap those helpers for the shared utilities so both models consume
-identical training and test sets.
+Shared data preparation
+-----------------------
+Per the issue, both models must share **identical** data preparation. We
+therefore reuse @ght-1's helpers from ``scripts.utils``:
+
+* ``temporal_split(df, date_col='date', train_end='2022-12-31')``
+* ``fit_scaler(X_train)`` -> (mean, std) with ``+1e-8`` numerical guard
+* ``apply_scaler(X, mean, std)`` -> standardised array
+
+so the splits and the scaler are byte-for-byte identical to whatever the
+main model evaluation uses.
 
 Run from repo root (after cleaned data exists):
 
@@ -45,60 +48,34 @@ from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.metrics import accuracy_score, log_loss, roc_auc_score
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts.utils import apply_scaler, fit_scaler, temporal_split  # noqa: E402
+
 DEFAULT_K_CANDIDATES: tuple[int, ...] = (10, 25, 50, 100, 250)
-DEFAULT_TRAIN_YEARS: tuple[int, int] = (2015, 2022)
-DEFAULT_TEST_YEARS: tuple[int, int] = (2023, 2024)
+DEFAULT_TRAIN_END: str = "2022-12-31"
 
 
 # ---------------------------------------------------------------------------
-# Data preparation helpers
+# Data preparation
 # ---------------------------------------------------------------------------
-def split_train_test_by_year(
-    df: pd.DataFrame,
-    train_years: tuple[int, int] = DEFAULT_TRAIN_YEARS,
-    test_years: tuple[int, int] = DEFAULT_TEST_YEARS,
-    date_col: str = "date",
-    year_col: str = "year",
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Year-based train/test split.
-
-    Mirrors the convention used elsewhere in the project (DBSCAN hotspots,
-    KNN forecast). Replace this with @ght-1's shared splitter once that PR
-    is merged so the location-only baseline and the main model share an
-    identical split.
-    """
-    if year_col in df.columns:
-        year = pd.to_numeric(df[year_col], errors="coerce")
-    else:
-        year = pd.to_datetime(df[date_col], errors="coerce").dt.year
-
-    train_mask = year.between(train_years[0], train_years[1])
-    test_mask = year.between(test_years[0], test_years[1])
-    train = df.loc[train_mask].reset_index(drop=True)
-    test = df.loc[test_mask].reset_index(drop=True)
-    return train, test
-
-
 def standardize_locations(
     train: pd.DataFrame,
     test: pd.DataFrame,
     feature_cols: tuple[str, str] = ("latitude", "longitude"),
-) -> tuple[np.ndarray, np.ndarray, StandardScaler]:
-    """Fit ``StandardScaler`` on train only, apply to both splits.
+) -> tuple[np.ndarray, np.ndarray, tuple[np.ndarray, np.ndarray]]:
+    """Standardise ``feature_cols`` using @ght-1's ``fit_scaler``/
+    ``apply_scaler`` from ``scripts.utils``, fit on train only.
 
-    Replace with the shared standardisation helper once @ght-1's PR is
-    merged so the from-scratch model and this baseline share the exact
-    same scaler state.
+    Returns ``(X_train_scaled, X_test_scaled, (mean, std))`` so callers can
+    apply the same transform to held-out queries.
     """
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(train[list(feature_cols)].to_numpy(dtype=float))
-    X_test = scaler.transform(test[list(feature_cols)].to_numpy(dtype=float))
-    return X_train, X_test, scaler
+    X_train = train[list(feature_cols)].to_numpy(dtype=float)
+    X_test = test[list(feature_cols)].to_numpy(dtype=float)
+    mean, std = fit_scaler(X_train)
+    return apply_scaler(X_train, mean, std), apply_scaler(X_test, mean, std), (mean, std)
 
 
 def slugify(name: str) -> str:
@@ -223,7 +200,7 @@ def evaluate_crime_type(
         param_grid={"n_neighbors": valid_k},
         scoring="neg_log_loss",
         cv=cv,
-        n_jobs=-1,
+        n_jobs=1,
         refit=True,
         error_score="raise",
     )
@@ -279,8 +256,8 @@ def evaluate_crime_type(
 def evaluate_all_crime_types(
     df: pd.DataFrame,
     *,
-    train_years: tuple[int, int] = DEFAULT_TRAIN_YEARS,
-    test_years: tuple[int, int] = DEFAULT_TEST_YEARS,
+    train_end: str = DEFAULT_TRAIN_END,
+    date_col: str = "date",
     k_candidates: Iterable[int] = DEFAULT_K_CANDIDATES,
     cv_folds: int = 5,
     random_state: int = 42,
@@ -288,15 +265,18 @@ def evaluate_all_crime_types(
     max_rows_per_type: int = 0,
     progress: bool = True,
 ) -> list[CrimeTypeResult]:
-    """Run the per-crime-type pipeline across the full dataset."""
-    required = {"primary_type", "latitude", "longitude", "arrest"}
+    """Run the per-crime-type pipeline across the full dataset.
+
+    Splits the input via ``scripts.utils.temporal_split`` (rows with
+    ``date_col <= train_end`` go to train, rest to test) so this baseline
+    consumes the exact same train/test as the from-scratch model.
+    """
+    required = {"primary_type", "latitude", "longitude", "arrest", date_col}
     missing = required - set(df.columns)
     if missing:
         raise KeyError(f"Input data missing required columns: {sorted(missing)}")
 
-    train_full, test_full = split_train_test_by_year(
-        df, train_years=train_years, test_years=test_years
-    )
+    train_full, test_full = temporal_split(df, date_col=date_col, train_end=train_end)
 
     if crime_types is None:
         types = sorted(df["primary_type"].dropna().unique().tolist())
@@ -349,13 +329,6 @@ def _parse_int_csv(text: str) -> list[int]:
     return [int(x.strip()) for x in text.split(",") if x.strip()]
 
 
-def _parse_year_pair(text: str) -> tuple[int, int]:
-    parts = [int(x.strip()) for x in text.split(",") if x.strip()]
-    if len(parts) != 2:
-        raise argparse.ArgumentTypeError("expected '<start>,<end>' (e.g. 2015,2022)")
-    return parts[0], parts[1]
-
-
 def build_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Location-only KNN baseline (sklearn) for arrest probability"
@@ -373,16 +346,14 @@ def build_argparser() -> argparse.ArgumentParser:
         help="Number of stratified CV folds for tuning K (default: 5)",
     )
     parser.add_argument(
-        "--train-years",
-        type=_parse_year_pair,
-        default=DEFAULT_TRAIN_YEARS,
-        help="Train year range as 'start,end' (default: 2015,2022)",
-    )
-    parser.add_argument(
-        "--test-years",
-        type=_parse_year_pair,
-        default=DEFAULT_TEST_YEARS,
-        help="Test year range as 'start,end' (default: 2023,2024)",
+        "--train-end",
+        type=str,
+        default=DEFAULT_TRAIN_END,
+        help=(
+            "Inclusive train cutoff date (YYYY-MM-DD). Rows with date <= "
+            "train_end go to train, the rest to test. Default: 2022-12-31, "
+            "matching @ght-1's `temporal_split` default."
+        ),
     )
     parser.add_argument(
         "--crime-types",
@@ -433,8 +404,7 @@ def main(argv: list[str] | None = None) -> int:
 
     results = evaluate_all_crime_types(
         df,
-        train_years=tuple(args.train_years),
-        test_years=tuple(args.test_years),
+        train_end=args.train_end,
         k_candidates=args.k_candidates,
         cv_folds=args.cv_folds,
         random_state=args.random_state,
@@ -449,8 +419,7 @@ def main(argv: list[str] | None = None) -> int:
     summary_rows = [r.metrics_dict() for r in results]
     metrics_payload = {
         "run_config": {
-            "train_years": list(args.train_years),
-            "test_years": list(args.test_years),
+            "train_end": args.train_end,
             "k_candidates": list(args.k_candidates),
             "cv_folds": int(args.cv_folds),
             "random_state": int(args.random_state),
@@ -458,6 +427,11 @@ def main(argv: list[str] | None = None) -> int:
             "feature_cols": ["latitude", "longitude"],
             "target_col": "arrest",
             "model": "sklearn.neighbors.KNeighborsClassifier(weights='uniform')",
+            "shared_data_prep": {
+                "split": "scripts.utils.temporal_split",
+                "fit_scaler": "scripts.utils.fit_scaler",
+                "apply_scaler": "scripts.utils.apply_scaler",
+            },
         },
         "per_crime_type": summary_rows,
     }

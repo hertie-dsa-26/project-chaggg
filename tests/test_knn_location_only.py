@@ -11,15 +11,14 @@ import pandas as pd
 
 from scripts.knn_location_only import (
     _parse_int_csv,
-    _parse_year_pair,
     _valid_k_candidates,
     evaluate_all_crime_types,
     evaluate_crime_type,
     main,
     slugify,
-    split_train_test_by_year,
     standardize_locations,
 )
+from scripts.utils import temporal_split
 
 
 def _make_two_cluster_df(
@@ -46,7 +45,6 @@ def _make_two_cluster_df(
             "latitude": np.concatenate([lat1, lat2]),
             "longitude": np.concatenate([lon1, lon2]),
             "arrest": np.concatenate([arr1, arr2]),
-            "year": years,
             "date": pd.to_datetime(
                 [f"{int(y)}-06-15" for y in years], errors="coerce"
             ),
@@ -73,59 +71,42 @@ class TestParseHelpers(unittest.TestCase):
         self.assertEqual(_parse_int_csv("10, 25 ,50,100, 250"), [10, 25, 50, 100, 250])
         self.assertEqual(_parse_int_csv(""), [])
 
-    def test_parse_year_pair(self):
-        self.assertEqual(_parse_year_pair("2015,2022"), (2015, 2022))
-        with self.assertRaises(Exception):
-            _parse_year_pair("2015")
 
+class TestSharedTemporalSplit(unittest.TestCase):
+    """Sanity tests proving we use @ght-1's temporal_split unchanged."""
 
-class TestSplitByYear(unittest.TestCase):
-    def test_year_column_used(self):
-        df = pd.DataFrame(
-            {
-                "year": [2015, 2018, 2022, 2023, 2024, 2025],
-                "value": [1, 2, 3, 4, 5, 6],
-            }
-        )
-        train, test = split_train_test_by_year(df, train_years=(2015, 2022), test_years=(2023, 2024))
-        self.assertEqual(train["value"].tolist(), [1, 2, 3])
-        self.assertEqual(test["value"].tolist(), [4, 5])
-
-    def test_falls_back_to_date(self):
+    def test_temporal_split_uses_train_end_inclusive(self):
         df = pd.DataFrame(
             {
                 "date": pd.to_datetime(
-                    ["2015-01-01", "2023-06-01", "2030-01-01"], errors="coerce"
+                    [
+                        "2022-12-31",
+                        "2023-01-01",
+                        "2024-06-15",
+                        "2015-06-15",
+                    ]
                 ),
-                "value": [1, 2, 3],
+                "value": [1, 2, 3, 4],
             }
         )
-        train, test = split_train_test_by_year(df)
-        self.assertEqual(train["value"].tolist(), [1])
-        self.assertEqual(test["value"].tolist(), [2])
-
-    def test_handles_invalid_date_strings(self):
-        df = pd.DataFrame(
-            {
-                "date": ["2015-01-01", "not-a-date", "2024-12-31"],
-                "value": [1, 2, 3],
-            }
-        )
-        train, test = split_train_test_by_year(df)
-        self.assertEqual(train["value"].tolist(), [1])
-        self.assertEqual(test["value"].tolist(), [3])
+        train, test = temporal_split(df, date_col="date", train_end="2022-12-31")
+        self.assertEqual(sorted(train["value"].tolist()), [1, 4])
+        self.assertEqual(sorted(test["value"].tolist()), [2, 3])
 
 
 class TestStandardize(unittest.TestCase):
-    def test_train_only_fit(self):
+    def test_train_only_fit_matches_ght_helpers(self):
         train = pd.DataFrame({"latitude": [0.0, 2.0, 4.0], "longitude": [10.0, 12.0, 14.0]})
         test = pd.DataFrame({"latitude": [2.0], "longitude": [12.0]})
-        X_train, X_test, scaler = standardize_locations(train, test)
-        self.assertAlmostEqual(float(np.mean(X_train[:, 0])), 0.0, places=9)
-        self.assertAlmostEqual(float(np.std(X_train[:, 0])), 1.0, places=6)
+        X_train, X_test, (mean, std) = standardize_locations(train, test)
+        np.testing.assert_allclose(mean, [2.0, 12.0], atol=1e-9)
+        # @ght-1's fit_scaler adds 1e-8 to std (vs StandardScaler) for stability
+        self.assertAlmostEqual(float(std[0]), train["latitude"].std(ddof=0) + 1e-8, places=9)
         # Test point at training mean must map to ~0 after transform
         self.assertAlmostEqual(float(X_test[0, 0]), 0.0, places=6)
         self.assertAlmostEqual(float(X_test[0, 1]), 0.0, places=6)
+        # Train should be (approximately) zero-mean after transform
+        self.assertAlmostEqual(float(np.mean(X_train[:, 0])), 0.0, places=9)
 
 
 class TestValidKCandidates(unittest.TestCase):
@@ -142,7 +123,7 @@ class TestValidKCandidates(unittest.TestCase):
 class TestEvaluateCrimeType(unittest.TestCase):
     def test_well_separated_clusters_yield_low_log_loss(self):
         df = _make_two_cluster_df(n_per_cluster=300, seed=0)
-        train, test = split_train_test_by_year(df)
+        train, test = temporal_split(df, date_col="date", train_end="2022-12-31")
         result = evaluate_crime_type(
             crime_type="THEFT",
             train=train,
@@ -175,10 +156,19 @@ class TestEvaluateCrimeType(unittest.TestCase):
                 "latitude": [41.0, 41.1, 41.2, 41.3, 41.4, 41.5],
                 "longitude": [-87.0, -87.1, -87.2, -87.3, -87.4, -87.5],
                 "arrest": [0, 0, 0, 0, 1, 1],
-                "year": [2015, 2016, 2017, 2018, 2023, 2024],
+                "date": pd.to_datetime(
+                    [
+                        "2015-01-01",
+                        "2016-01-01",
+                        "2017-01-01",
+                        "2018-01-01",
+                        "2023-01-01",
+                        "2024-01-01",
+                    ]
+                ),
             }
         )
-        train, test = split_train_test_by_year(df)
+        train, test = temporal_split(df, date_col="date", train_end="2022-12-31")
         result = evaluate_crime_type("THEFT", train=train, test=test, cv_folds=2)
         self.assertEqual(result.skipped, "single-class training set")
         self.assertIsNone(result.test_log_loss)
@@ -190,10 +180,17 @@ class TestEvaluateCrimeType(unittest.TestCase):
                 "latitude": [41.0, 41.1, 41.2, 41.3],
                 "longitude": [-87.0, -87.1, -87.2, -87.3],
                 "arrest": [0, 1, 0, 1],
-                "year": [2015, 2016, 2017, 2018],
+                "date": pd.to_datetime(
+                    [
+                        "2015-01-01",
+                        "2016-01-01",
+                        "2017-01-01",
+                        "2018-01-01",
+                    ]
+                ),
             }
         )
-        train, test = split_train_test_by_year(df)
+        train, test = temporal_split(df, date_col="date", train_end="2022-12-31")
         result = evaluate_crime_type("THEFT", train=train, test=test, cv_folds=2)
         self.assertEqual(result.skipped, "empty train or test split")
 
@@ -258,6 +255,11 @@ class TestMainIntegration(unittest.TestCase):
             payload = json.loads((out_dir / "metrics.json").read_text())
             self.assertIn("run_config", payload)
             self.assertEqual(payload["run_config"]["k_candidates"], [5, 10])
+            self.assertEqual(payload["run_config"]["train_end"], "2022-12-31")
+            self.assertEqual(
+                payload["run_config"]["shared_data_prep"]["split"],
+                "scripts.utils.temporal_split",
+            )
             self.assertEqual(len(payload["per_crime_type"]), 1)
             self.assertEqual(payload["per_crime_type"][0]["crime_type"], "THEFT")
             self.assertIsNone(payload["per_crime_type"][0].get("skipped"))
