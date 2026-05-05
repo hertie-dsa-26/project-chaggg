@@ -155,10 +155,12 @@ class TestEvaluateCrimeType(unittest.TestCase):
         self.assertIn(result.best_k, [5, 10, 25])
         self.assertIsNotNone(result.test_log_loss)
         self.assertIsNotNone(result.test_accuracy)
+        self.assertIsNotNone(result.test_roc_auc)
         # With well-separated, calibrated clusters, KNN must do better than
         # the pure positive-rate baseline of ~0.5 -> log(2) ≈ 0.693
         self.assertLess(result.test_log_loss, 0.55)
         self.assertGreater(result.test_accuracy, 0.7)
+        self.assertGreater(result.test_roc_auc, 0.85)
         self.assertEqual(len(result.cv_neg_log_loss), 3)
         self.assertIsNotNone(result.predictions)
         self.assertEqual(

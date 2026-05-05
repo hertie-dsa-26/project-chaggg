@@ -42,7 +42,7 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import UndefinedMetricWarning
-from sklearn.metrics import accuracy_score, log_loss
+from sklearn.metrics import accuracy_score, log_loss, roc_auc_score
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
@@ -125,6 +125,7 @@ class CrimeTypeResult:
     best_k: int | None = None
     test_log_loss: float | None = None
     test_accuracy: float | None = None
+    test_roc_auc: float | None = None
     fit_seconds: float | None = None
     predictions: pd.DataFrame | None = field(default=None, repr=False)
 
@@ -147,6 +148,7 @@ class CrimeTypeResult:
                 "cv_neg_log_loss": self.cv_neg_log_loss,
                 "test_log_loss": self.test_log_loss,
                 "test_accuracy": self.test_accuracy,
+                "test_roc_auc": self.test_roc_auc,
                 "fit_seconds": self.fit_seconds,
             }
         )
@@ -259,6 +261,8 @@ def evaluate_crime_type(
         if p_arrest_idx is not None
         else np.zeros(len(y_test), dtype=float)
     )
+    if p_arrest_idx is not None and len(np.unique(y_test)) >= 2:
+        base.test_roc_auc = float(roc_auc_score(y_test, p_arrest))
 
     base.predictions = pd.DataFrame(
         {
@@ -472,6 +476,7 @@ def main(argv: list[str] | None = None) -> int:
                 "best_k": r.best_k,
                 "test_log_loss": r.test_log_loss,
                 "test_accuracy": r.test_accuracy,
+                "test_roc_auc": r.test_roc_auc,
                 "skipped": r.skipped,
             }
             for r in results
@@ -495,7 +500,13 @@ def main(argv: list[str] | None = None) -> int:
         eval_df_sorted = eval_df.sort_values("test_log_loss")
         print(
             eval_df_sorted[
-                ["crime_type", "best_k", "test_log_loss", "test_accuracy"]
+                [
+                    "crime_type",
+                    "best_k",
+                    "test_log_loss",
+                    "test_accuracy",
+                    "test_roc_auc",
+                ]
             ].to_string(index=False)
         )
     skipped_df = summary_df[~summary_df["skipped"].isna()]
