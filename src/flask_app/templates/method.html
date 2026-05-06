@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Method · Chicago Crime Analysis{% endblock %}
+{% block nav_method %}active{% endblock %}
+
+{% block content %}
+<div class="page-meta">
+  <span>Section · Method</span>
+  <span>chicago_crime.db // method</span>
+</div>
+
+<!-- ROW 1: Codebook -->
+<div class="page-row">
+  <section class="page-section">
+    <div class="page-eyebrow">section · 01</div>
+    <h2>what the records say</h2>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Open with the codebook framing — every row is one reported incident, but each column carries assumptions. This section walks through the fields that matter for our analysis.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Field-by-field summary: <code>primary_type</code> (33 categories), <code>arrest</code> (binary), <code>domestic</code> (binary), <code>community_area</code> (1–77), spatial coordinates, and the temporal stack (year/month/day/hour).
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Caveats up front: incidents are reports, not convictions. Geocoded location is offset for privacy. Counts conflate reporting behavior with underlying events.
+    </p>
+  </section>
+
+  <a href="#" class="page-jump" style="opacity: 0.5; cursor: not-allowed;">
+    <div class="page-jump-num">→ doc</div>
+    <div class="page-jump-title">codebook</div>
+    <div class="page-jump-desc">
+      Full data dictionary with field definitions, value ranges, and source documentation.
+    </div>
+    <div class="page-jump-arrow">coming soon ↗</div>
+  </a>
+</div>
+
+<!-- ROW 2: Cleaning -->
+<div class="page-row">
+  <section class="page-section">
+    <div class="page-eyebrow">section · 02</div>
+    <h2>what the records don't say</h2>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Raw data is messy. This section documents what we removed, why we removed it, and what those decisions exclude from the analysis.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Pipeline summary: year filter (2002–2025), coordinate validation (Chicago bounding box), type coercion (Int64 for nullable categoricals), feature extraction (year/month/day/hour, plus cyclical sin/cos encodings), and a known-typo fix (CRIM SEXUAL ASSAULT → CRIMINAL SEXUAL ASSAULT).
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Headline numbers: raw ~8.2M → cleaned ~8.0M. The ~200k records we dropped were missing coordinates or fell outside Chicago's bounds.
+    </p>
+  </section>
+
+  <a href="#" class="page-jump" style="opacity: 0.5; cursor: not-allowed;">
+    <div class="page-jump-num">→ src</div>
+    <div class="page-jump-title">pipeline</div>
+    <div class="page-jump-desc">
+      Step-by-step cleaning script with reasoning for each transformation.
+    </div>
+    <div class="page-jump-arrow">coming soon ↗</div>
+  </a>
+</div>
+
+<!-- ROW 3: Interpretation -->
+<div class="page-row">
+  <section class="page-section">
+    <div class="page-eyebrow">section · 03</div>
+    <h2>what the records can prove</h2>
+    <p>
+      <span class="placeholder">placeholder</span>
+      The hard part — what counts as evidence? This section frames how we read deterrence from the cleaned data, and what we can and can't claim.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Notes on causal inference: the dataset is observational, not experimental. We can show correlations between arrest rates and subsequent incidents, but isolating deterrence from other drivers (demographic shifts, policy changes, unreported crime) requires careful design.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      How to read the dashboard outputs without overreading them. What a high arrest rate in a community area does and does not imply.
+    </p>
+  </section>
+
+  <a href="#" class="page-jump" style="opacity: 0.5; cursor: not-allowed;">
+    <div class="page-jump-num">→ next</div>
+    <div class="page-jump-title">algorithm</div>
+    <div class="page-jump-desc">
+      How we operationalized the question — from raw records to a model that estimates deterrence.
+    </div>
+    <div class="page-jump-arrow">read ↗</div>
+  </a>
+</div>
+{% endblock %}

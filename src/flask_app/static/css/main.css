@@ -1,0 +1,368 @@
+/* ============================================
+   Chicago Crime Analysis · main stylesheet
+   Terminal forensic · dark
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&display=swap');
+
+:root {
+    /* Palette */
+    --bg-base:    #1f242b;
+    --bg-elev:    #232931;
+    --bg-card:    #1a1f26;
+    --text:       #e6edf3;
+    --text-muted: #b2bbc5;
+    --text-dim:   #6e7681;
+    --text-faint: #4d5560;
+    --border:     #30363d;
+
+    /* Accent */
+    --accent:        #22c55e;
+    --accent-hover:  #16a34a;
+
+    /* Typography */
+    --font-mono:    'Courier New', Courier, monospace;
+    --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    background: var(--bg-base);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    letter-spacing: 0.01em;
+    position: relative;
+}
+
+/* Chicago community areas as background layer */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background-image: url('/static/img/chicago-outline.svg');;
+    background-position: 34%  center;
+    background-repeat: no-repeat;
+    background-size: 54% 110%;
+    color: var(--accent);
+    opacity: 0.35;
+    pointer-events: none;
+    filter: drop-shadow(0 0 3px var(--accent));
+}
+
+/* Subtle grid overlay on top of map */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+        linear-gradient(rgba(34, 197, 94, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 197, 94, 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+}
+
+.container {
+    max-width: min(1600px, 92vw);
+    margin: 0 auto;
+    padding: 2rem 0;
+}
+
+/* ── Header / Nav ─────────────────────────── */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 0.875rem;
+    margin-bottom: 2.5rem;
+}
+
+header h1 {
+    font-family: var(--font-mono);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: lowercase;
+    color: var(--accent);
+}
+
+header h1 span {
+    color: var(--accent);
+}
+
+nav {
+    display: flex;
+    gap: 1.4rem;
+}
+
+nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding-bottom: 4px;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+nav a:hover {
+    color: var(--text);
+}
+
+nav a.active {
+    color: var(--text);
+    border-bottom: 1px solid var(--accent);
+}
+
+/* ── Headings ─────────────────────────────── */
+main h2 {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 600;
+    font-variation-settings: "opsz" 72, "SOFT" 30, "WONK" 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    color: var(--text);
+}
+
+main p {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-variation-settings: "opsz" 14, "SOFT" 50, "WONK" 0;
+    font-size: 1.5rem;
+    line-height: 1.7;
+}
+
+/* ── Cards ────────────────────────────────── */
+.card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.card:hover {
+    border-color: var(--accent);
+}
+
+.card h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* ── Buttons ──────────────────────────────── */
+.btn {
+    display: inline-block;
+    background: transparent;
+    color: var(--accent);
+    padding: 0.7rem 1.5rem;
+    border: 1.5px solid var(--accent);
+    border-radius: 2px;
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.15rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn:hover {
+    background: var(--accent);
+    color: var(--bg-base);
+}
+
+.btn-secondary {
+    color: var(--text-dim);
+    border-color: var(--border);
+}
+
+.btn-secondary:hover {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--text);
+}
+
+/* ── Link list ────────────────────────────── */
+ul.link-list {
+    list-style: none;
+}
+
+ul.link-list li {
+    margin-bottom: 0.5rem;
+}
+
+ul.link-list a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 1.3rem;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+ul.link-list a:hover {
+    color: var(--text);
+}
+
+/* ── Footer ───────────────────────────────── */
+footer {
+    margin-top: 4rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--border);
+    font-size: 1.15rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+
+/* ============================================
+   Generic page layout
+   For Overview / Method / Algorithm / About
+   ============================================ */
+
+.page-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 2.5rem;
+    padding-top: 0.5rem;
+}
+
+.page-eyebrow {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    letter-spacing: 0.18em;
+    text-transform: lowercase;
+    margin-bottom: 1.25rem;
+}
+.page-eyebrow::before { content: '> '; }
+
+.page-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    margin-bottom: 4rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px dashed var(--border);
+    max-width: 1350px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.page-row:last-child { border-bottom: none; }
+
+@media (max-width: 900px) {
+    .page-row { grid-template-columns: 1fr; gap: 2rem; }
+}
+
+.page-section h2 {
+    font-family: var(--font-mono);
+    font-size: 2.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-transform: lowercase;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+}
+
+.page-section p {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 14, "SOFT" 50, "WONK" 0;
+    font-weight: 400;
+    font-size: 1.3rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    max-width: 45rem;
+}
+
+.page-section .placeholder {
+    display: inline-block;
+    background: rgba(196, 69, 54, 0.12);
+    color: #c44536;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.5rem;
+    border-radius: 2px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+/* Right-side jump card */
+.page-jump {
+    display: block;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+.page-jump:hover {
+    background: var(--bg-elev);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.page-jump-num {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    margin-bottom: 0.75rem;
+}
+
+.page-jump-title {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.5rem;
+}
+
+.page-jump-desc {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.page-jump-arrow {
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    animation: page-pulse 2s ease-in-out infinite;
+}
+.page-jump:hover .page-jump-arrow { transform: translateX(3px); }
+
+@keyframes page-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+}
