@@ -83,6 +83,27 @@ def get_data_info():
         else:
             print(f"✗ {name:20s} {'(not found)':>10s}  {path}")
 
+def fit_scaler(X_train):
+    """Fit standardization parameters on training data.
+
+    Restored from @ght-1's commits cb7bd85 / c8ce03a, which were authored
+    against scripts/utils.py inside PR #105 but did not survive the merge
+    into main. Both the from-scratch model and the location-only KNN
+    baseline reuse these so they share identical data preparation.
+    """
+    mean = X_train.mean(axis=0)
+    std = X_train.std(axis=0) + 1e-8
+    return mean, std
+
+def apply_scaler(X, mean, std):
+    """Apply previously-fit standardization to data."""
+    return (X - mean) / std
+
+def temporal_split(df, date_col='date', train_end='2022-12-31'):
+    """Split into train (≤ train_end) and test (> train_end)."""
+    train_mask = df[date_col] <= train_end
+    return df[train_mask].reset_index(drop=True), df[~train_mask].reset_index(drop=True)
+
 if __name__ == "__main__":
     print("=" * 60)
     print("CHICAGO CRIME DATA UTILITIES")
