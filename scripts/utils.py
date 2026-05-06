@@ -9,6 +9,7 @@ Common usage:
 import pandas as pd
 import os
 import math
+import re
 
 try:
     from .config import *  # When imported as a module (Flask)
@@ -82,6 +83,21 @@ def get_data_info():
             print(f"✓ {name:20s} {size_mb:8.1f} MB  {path}")
         else:
             print(f"✗ {name:20s} {'(not found)':>10s}  {path}")
+
+def normalise_crime_type(crime_type: str) -> str:
+    """Normalise a Chicago crime primary_type string to a file name using always the same pattern.
+    """
+    if not isinstance(crime_type, str):
+        raise TypeError(
+            f"crime_type must be str, got {type(crime_type).__name__}"
+        )
+
+    file_name = re.sub(r"[^a-z0-9]+", "_", crime_type.lower()).strip("_")
+
+    if not file_name:
+        raise ValueError(f"crime_type {crime_type!r} normalised to empty string")
+
+    return file_name
 
 if __name__ == "__main__":
     print("=" * 60)

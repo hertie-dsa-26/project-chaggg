@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}KNN Arrest Predictor{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  .algo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  #map { height: 480px; border: 1px solid #ccc; border-radius: 4px; }
+  .result-card {
+    border: 1px solid #ccc; border-radius: 4px; padding: 1rem;
+    margin-top: 1rem; min-height: 120px;
+  }
+  .result-prob { font-size: 2.5rem; font-weight: bold; }
+  .result-prob.muted { color: #888; }
+  .form-row { margin-bottom: 0.75rem; }
+  .form-row label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+  .form-row input, .form-row select { width: 100%; padding: 0.4rem; }
+  #k-display { font-weight: bold; }
+  .pin-hint { font-size: 0.85rem; color: #666; margin-top: 0.25rem; }
+  .error { color: #c00; }
+  @media (max-width: 900px) { .algo-grid { grid-template-columns: 1fr; } }
+</style>
+
+<h1>Will I be arrested?</h1>
+<p>Predict the probability of arrest given a location, time, and crime type using KNN logistic ridge regression on Chicago crime data (2001–2025).</p>
+
+<div class="algo-grid">
+  <div>
+    <div id="map"></div>
+    <div class="pin-hint">Click anywhere on the map to drop a pin.</div>
+
+    <div class="result-card">
+      <div>Probability of being arrested given temporal and spatial data:</div>
+      <div id="result" class="result-prob muted">—</div>
+      <div id="result-meta" style="font-size: 0.85rem; color: #666;"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="form-row">
+      <label for="crime-type">Crime type</label>
+      <select id="crime-type">
+        <option value="" disabled selected>-- choose crime type --</option>
+        {% for slug in crime_types %}
+        <option value="{{ slug }}">{{ slug.replace('_', ' ').title() }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label>Location (click map)</label>
+      <div>
+        Lat: <span id="lat-display">—</span>,
+        Lon: <span id="lon-display">—</span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label for="date">Date (2026)</label>
+      <input type="date" id="date" min="2026-01-01" max="2026-12-31" value="2026-06-15">
+    </div>
+
+    <div class="form-row">
+      <label for="hour">Hour of day</label>
+      <select id="hour">
+        {% for h in range(24) %}
+        <option value="{{ h }}" {% if h == 12 %}selected{% endif %}>{{ "%02d:00"|format(h) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label for="algorithm">Algorithm</label>
+      <select id="algorithm">
+        <option value="knn">KNN (from scratch)</option>
+        <option value="naive" disabled>Naive probability (coming soon)</option>
+        <option value="dbscan" disabled>DBSCAN (coming soon)</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label for="k">k = <span id="k-display">25</span></label>
+      <input type="range" id="k" min="1" max="100" value="25">
+    </div>
+
+    <button id="predict-btn" type="button">Predict</button>
+    <div id="error" class="error"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // ---- Map setup -----------------------------------------------------------
+  const map = L.map('map').setView([41.8781, -87.6298], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+  }).addTo(map);
+
+  // Force Leaflet to recalculate dimensions after the page settles
+  setTimeout(() => map.invalidateSize(), 100);
+
+  fetch("{{ url_for('static', filename='data/space/chicago_community_areas.geojson') }}")
+    .then(r => r.json())
+    .then(geojson => {
+      L.geoJSON(geojson, {
+        style: { color: '#666', weight: 1, fillOpacity: 0.05 },
+      }).addTo(map);
+    })
+    .catch(err => console.warn('Could not load community areas:', err));
+
+  let marker = null;
+  let lat = null, lon = null;
+
+  map.on('click', (e) => {
+    lat = e.latlng.lat;
+    lon = e.latlng.lng;
+    if (marker) marker.setLatLng(e.latlng);
+    else marker = L.marker(e.latlng).addTo(map);
+    document.getElementById('lat-display').textContent = lat.toFixed(5);
+    document.getElementById('lon-display').textContent = lon.toFixed(5);
+  });
+
+  // ---- k slider live readout -----------------------------------------------
+  const kInput = document.getElementById('k');
+  const kDisplay = document.getElementById('k-display');
+  kInput.addEventListener('input', () => { kDisplay.textContent = kInput.value; });
+
+  // ---- Predict button ------------------------------------------------------
+  const resultEl = document.getElementById('result');
+  const resultMeta = document.getElementById('result-meta');
+  const errorEl = document.getElementById('error');
+
+  document.getElementById('predict-btn').addEventListener('click', async () => {
+    errorEl.textContent = '';
+
+    if (lat === null || lon === null) {
+      errorEl.textContent = 'Click on the map to choose a location first.';
+      return;
+    }
+    const crimeType = document.getElementById('crime-type').value;
+    if (!crimeType) {
+      errorEl.textContent = 'Choose a crime type first.';
+      return;
+    }
+
+    const payload = {
+      algorithm: document.getElementById('algorithm').value,
+      crime_type: crimeType,
+      lat, lon,
+      date: document.getElementById('date').value,
+      hour: parseInt(document.getElementById('hour').value, 10),
+      k: parseInt(kInput.value, 10),
+    };
+
+    resultEl.textContent = '…';
+    resultEl.classList.add('muted');
+    resultMeta.textContent = '';
+
+    try {
+      const res = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errorEl.textContent = data.error || `Request failed (${res.status})`;
+        resultEl.textContent = '—';
+        return;
+      }
+      const pct = (data.probability * 100).toFixed(1);
+      resultEl.textContent = `${pct}%`;
+      resultEl.classList.remove('muted');
+      resultMeta.textContent =
+        `k=${data.k} neighbors out of ${data.n_total.toLocaleString()} ${data.crime_type} incidents`;
+    } catch (err) {
+      errorEl.textContent = `Network error: ${err.message}`;
+      resultEl.textContent = '—';
+    }
+  });
+});
+</script>
+{% endblock %}
