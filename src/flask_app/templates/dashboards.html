@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboards · Chicago Crime Analysis{% endblock %}
+
+{% block extra_css %}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<style>
+  /* Hero block */
+  .db-hero {
+    margin-bottom: 3.5rem;
+    padding-top: 0.5rem;
+  }
+  .db-hero-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 2rem;
+  }
+  .db-hero-eyebrow {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    letter-spacing: 0.18em;
+    text-transform: lowercase;
+    margin-bottom: 1rem;
+  }
+  .db-hero-eyebrow::before { content: '> '; }
+  .db-hero h1 {
+    font-family: var(--font-mono);
+    font-size: 3.4rem;
+    font-weight: 700;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    text-transform: lowercase;
+    color: var(--text);
+    margin: 0 0 1.25rem;
+  }
+  .db-hero h1 .x {
+    color: var(--accent);
+    font-style: italic;
+  }
+  .db-hero-sub {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 14, "SOFT" 50, "WONK" 0;
+    font-weight: 400;
+    font-size: 1.2rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    max-width: 40rem;
+    margin-bottom: 2rem;
+  }
+  .db-hero-jumps {
+    display: flex;
+    gap: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--border);
+  }
+  .db-hero-jumps a {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .db-hero-jumps a:hover { color: var(--accent); }
+  .db-hero-jumps a::before { content: '↓ '; color: var(--accent); }
+
+  /* Section divider */
+  .db-section {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px dashed var(--border);
+    scroll-margin-top: 2rem;
+  }
+  .db-section-eyebrow {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .db-section h2 {
+    font-family: var(--font-mono);
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-transform: lowercase;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+  .db-section .lead {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 14, "SOFT" 50, "WONK" 0;
+    font-weight: 400;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    max-width: 42rem;
+    margin-bottom: 2rem;
+  }
+</style>
+
+{% endblock %}
+
+{% block content %}
+
+<script>
+  (function() {
+    if (window.location.hash) {
+      history.replaceState(null, '', window.location.pathname);
+    }
+  })();
+</script>
+
+<!-- HERO -->
+<div class="db-hero">
+  <div class="db-hero-meta">
+    <span>Section · Dashboards</span>
+    <span>chicago_crime.db // explore</span>
+  </div>
+  <div class="db-hero-eyebrow">explore</div>
+  <h1>spatial <span class="x">×</span> temporal</h1>
+  <p class="db-hero-sub">
+    The same ~8M records, viewed two ways. Below, where crime happens — the city block by block. Then, when crime happens — the rhythms of years, months, and hours.
+  </p>
+  <div class="db-hero-jumps">
+    <a href="#spatial">jump to spatial</a>
+    <a href="#temporal">jump to temporal</a>
+  </div>
+</div>
+
+<!-- SPATIAL SECTION -->
+<section id="spatial" class="db-section">
+  <div class="db-section-eyebrow">section · 01</div>
+  <h2>spatial</h2>
+  <p class="lead">
+    Year-by-year heatmap and incident clusters across Chicago's 77 community areas. Drag the slider to step through 2002–2025.
+  </p>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+  {% include "dashboards/_space_content.html" %}
+</section>
+
+<!-- TEMPORAL SECTION -->
+<section id="temporal" class="db-section">
+  <div class="db-section-eyebrow">section · 02</div>
+  <h2>temporal</h2>
+  <p class="lead">
+    Crime over years, seasons, and the hour-by-day rhythm of the city. Filter by crime type to see how patterns shift.
+  </p>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  {% include "dashboards/_time_content.html" %}
+</section>
+
+{% endblock %}

@@ -1,25 +1,82 @@
 {% extends "base.html" %}
 
-{% block title %}About - Chicago Crime Analysis{% endblock %}
+{% block title %}About · Chicago Crime Analysis{% endblock %}
+{% block nav_about %}active{% endblock %}
 
 {% block content %}
-<h2>About the Project</h2>
-<p>This web application is part of a group project for the Data Structures and Algorithms course at the Hertie School in Berlin.</p>
-
-<div class="card">
-    <h2>Research Question</h2>
-    <p>Are arrests effectively dissuasive against future crime incidents, both over time and across space?</p>
+<div class="page-meta">
+  <span>Section · About</span>
+  <span>chicago_crime.db // about</span>
 </div>
 
-<div class="card">
-    <h2>Policy Framing</h2>
-    <p>Shedding light on failures in the justice system and supporting decision-making around police resource allocation.</p>
+<!-- ROW 1: The project -->
+<div class="page-row">
+  <section class="page-section">
+    <div class="page-eyebrow">section · 01</div>
+    <h2>the project</h2>
+    <p>
+      <span class="placeholder">placeholder</span>
+      One-paragraph summary of why this project exists. The research question, in plain language. What policy conversation it's meant to inform.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Course context: this work was developed for the Data Structures and Algorithms course at the Hertie School in Berlin, spring 2026.
+    </p>
+  </section>
+
+  <a href="/" class="page-jump">
+    <div class="page-jump-num">→ home</div>
+    <div class="page-jump-title">research question</div>
+    <div class="page-jump-desc">
+      Are arrests effectively dissuasive against future crime — over time and across space?
+    </div>
+    <div class="page-jump-arrow">read ↗</div>
+  </a>
 </div>
 
-<div class="card">
-    <h2>Target Audience</h2>
-    <p>Policy makers and community leaders.</p>
+<!-- ROW 2: The team -->
+<div class="page-row">
+  <section class="page-section">
+    <div class="page-eyebrow">section · 02</div>
+    <h2>the team</h2>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Team member names and roles. Short note from each member if appropriate, or a paragraph on how the team divided the work.
+    </p>
+  </section>
+
+  <a href="#" class="page-jump" style="opacity: 0.5; cursor: not-allowed;">
+    <div class="page-jump-num">→ link</div>
+    <div class="page-jump-title">github</div>
+    <div class="page-jump-desc">
+      Source code, data pipeline, and full project history.
+    </div>
+    <div class="page-jump-arrow">coming soon ↗</div>
+  </a>
 </div>
 
-<a href="/" class="btn btn-secondary">← Back to home</a>
+<!-- ROW 3: Audience and intent -->
+<div class="page-row">
+  <section class="page-section">
+    <div class="page-eyebrow">section · 03</div>
+    <h2>who it's for</h2>
+    <p>
+      <span class="placeholder">placeholder</span>
+      Who we built this for: policymakers, community leaders, and anyone with stakes in how Chicago thinks about deterrence.
+    </p>
+    <p>
+      <span class="placeholder">placeholder</span>
+      What we hope readers take away — and what we hope they don't (caveats on misuse, limitations of observational data).
+    </p>
+  </section>
+
+  <a href="/method" class="page-jump">
+    <div class="page-jump-num">→ next</div>
+    <div class="page-jump-title">method</div>
+    <div class="page-jump-desc">
+      How we frame the question and what the data can and can't tell us.
+    </div>
+    <div class="page-jump-arrow">read ↗</div>
+  </a>
+</div>
 {% endblock %}

@@ -4,16 +4,19 @@
 
 {% block content %}
 <h2>Dashboard: Time</h2>
-<p>Temporal exploration placeholder. Loaded rows: <strong>{{ rows }}</strong>.</p>
+<p>Temporal crime patterns with interactive filtering by crime type.</p>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+{% include "dashboards/_time_content.html" %}
 
 <div class="card">
-    <h2>Planned views</h2>
-    <ul class="link-list">
-        <li><a href="/dashboards/space">→ Spatial dashboard</a></li>
-        <li><a href="/dashboards/types">→ Crime types dashboard</a></li>
-    </ul>
+  <h2>Navigation</h2>
+  <ul class="link-list">
+    <li><a href="/dashboards/space">→ Spatial dashboard</a></li>
+    <li><a href="/dashboards/types">→ Crime types dashboard</a></li>
+  </ul>
 </div>
-
 <a href="/" class="btn btn-secondary">← Back to home</a>
-{% endblock %}
 
+{% endblock %}

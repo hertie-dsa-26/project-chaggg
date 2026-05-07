@@ -1,0 +1,305 @@
+{# Partial: temporal dashboard content. Used by dashboards/time.html and the merged dashboards page. #}
+
+<style>
+  .temporal-wrap {
+    max-width: 850px;
+    margin: 0 auto;
+    padding-top: 1.5rem;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+  }
+  .controls label {
+    color: #5a9b6e;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .controls select {
+    background: rgba(20, 30, 40, 0.92);
+    color: #e6edf3;
+    border: 1px solid rgba(90, 155, 110, 0.3);
+    border-radius: 4px;
+    padding: 0.45rem 0.9rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    min-width: 220px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .controls select:focus,
+  .controls select:hover {
+    outline: none;
+    border-color: #5a9b6e;
+    box-shadow: 0 0 8px rgba(90, 155, 110, 0.3);
+  }
+  .loading {
+    color: #8b949e;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-left: 0.5rem;
+  }
+
+  .chart-container {
+    background: rgba(20, 30, 40, 0.45);
+    border: 1px solid rgba(90, 155, 110, 0.2);
+    border-radius: 4px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .chart-container h3 {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #5a9b6e;
+    margin-bottom: 1rem;
+  }
+  .chart-container h3::before {
+    content: '// ';
+    color: rgba(90, 155, 110, 0.6);
+  }
+  .chart-container canvas { width: 100% !important; height: 280px !important; }
+
+  .heatmap-wrapper { overflow-x: auto; }
+  .heatmap-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .heatmap-table th {
+    padding: 6px 8px;
+    color: #5a9b6e;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: center;
+    font-size: 0.65rem;
+  }
+  .heatmap-table td {
+    padding: 5px 8px;
+    text-align: center;
+    color: #e6edf3;
+    font-weight: 700;
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(20, 30, 40, 0.5);
+  }
+  .heatmap-table .hour-label {
+    color: #8b949e;
+    text-align: right;
+    font-weight: 700;
+    background: transparent !important;
+    border: none;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+  }
+</style>
+
+<div class="temporal-wrap">
+  <div class="controls">
+    <label for="crimeType">Crime Type &gt;</label>
+    <select id="crimeType"><option value="ALL">All Types</option></select>
+    <span class="loading" id="loadingMsg" style="display:none">// loading...</span>
+  </div>
+
+  <div class="chart-container">
+    <h3>Total Crime Incidents by Year (2002–2025)</h3>
+    <canvas id="yearChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h3>Average Crime Count by Month (Seasonality)</h3>
+    <canvas id="monthChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h3>Crime Incidents by Hour and Day of Week</h3>
+    <div class="heatmap-wrapper">
+      <table class="heatmap-table" id="heatmapTable"></table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let yearChart, monthChart;
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Color tokens
+  const COLOR_LINE = '#a0ff8c';
+  const COLOR_BAR = '#3b6f4a';
+  const COLOR_GRID = 'rgba(90, 155, 110, 0.08)';
+  const COLOR_TICK = '#8b949e';
+  const COLOR_TOOLTIP_BG = 'rgba(20, 30, 40, 0.95)';
+  const COLOR_TOOLTIP_BORDER = '#5a9b6e';
+  const COLOR_TOOLTIP_TEXT = '#e6edf3';
+
+  function initChart(id, type, labels, data, label) {
+    const ctx = document.getElementById(id).getContext('2d');
+    const isLine = type === 'line';
+    const color = isLine ? COLOR_LINE : COLOR_BAR;
+
+    return new Chart(ctx, {
+      type: type,
+      data: {
+        labels: labels,
+        datasets: [{
+          label: label,
+          data: data,
+          borderColor: color,
+          backgroundColor: isLine ? 'rgba(160, 255, 140, 0.08)' : 'rgba(59, 111, 74, 0.85)',
+          borderWidth: isLine ? 2 : 1,
+          pointRadius: isLine ? 3 : 0,
+          pointBackgroundColor: color,
+          pointBorderColor: '#1a2a3a',
+          pointBorderWidth: 1.5,
+          tension: 0.3,
+          fill: isLine
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: COLOR_TOOLTIP_BG,
+            borderColor: COLOR_TOOLTIP_BORDER,
+            borderWidth: 1,
+            titleColor: COLOR_TOOLTIP_BORDER,
+            bodyColor: COLOR_TOOLTIP_TEXT,
+            titleFont: { family: 'Courier New', weight: 'bold', size: 11 },
+            bodyFont: { family: 'Courier New', weight: 'bold', size: 12 },
+            padding: 10,
+            cornerRadius: 2,
+            displayColors: false,
+            callbacks: {
+              label: (ctx) => ctx.parsed.y.toLocaleString()
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: COLOR_TICK,
+              font: { family: 'Courier New', size: 10 }
+            },
+            grid: { color: COLOR_GRID }
+          },
+          y: {
+            ticks: {
+              color: COLOR_TICK,
+              font: { family: 'Courier New', size: 10 },
+              callback: v => v.toLocaleString()
+            },
+            grid: { color: COLOR_GRID },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  function renderHeatmap(matrix, days, hours) {
+    const table = document.getElementById('heatmapTable');
+    const allVals = matrix.flat();
+    const maxVal = Math.max(...allVals);
+    const minVal = Math.min(...allVals);
+
+    // Map normalized value → color along map's gradient (slate → green)
+    function heatColor(val) {
+      const t = maxVal === minVal ? 0 : (val - minVal) / (maxVal - minVal);
+
+      // Stops mirroring map gradient
+      const stops = [
+        { p: 0.0,  c: [40, 60, 80] },
+        { p: 0.15, c: [50, 75, 95] },
+        { p: 0.35, c: [60, 110, 105] },
+        { p: 0.55, c: [75, 155, 110] },
+        { p: 0.75, c: [110, 200, 120] },
+        { p: 1.0,  c: [160, 255, 140] }
+      ];
+
+      for (let i = 0; i < stops.length - 1; i++) {
+        const a = stops[i], b = stops[i + 1];
+        if (t >= a.p && t <= b.p) {
+          const local = (t - a.p) / (b.p - a.p);
+          const r = Math.round(a.c[0] + (b.c[0] - a.c[0]) * local);
+          const g = Math.round(a.c[1] + (b.c[1] - a.c[1]) * local);
+          const bl = Math.round(a.c[2] + (b.c[2] - a.c[2]) * local);
+          return `rgb(${r},${g},${bl})`;
+        }
+      }
+      return 'rgb(40,60,80)';
+    }
+
+    let html = '<thead><tr><th></th>';
+    days.forEach(d => { html += `<th>${d.slice(0,3)}</th>`; });
+    html += '</tr></thead><tbody>';
+    hours.forEach((h, i) => {
+      html += `<tr><td class="hour-label">${String(h).padStart(2,'0')}:00</td>`;
+      days.forEach((_, j) => {
+        const v = matrix[i][j];
+        html += `<td style="background:${heatColor(v)}">${v.toLocaleString()}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody>';
+    table.innerHTML = html;
+  }
+
+  function loadData(type) {
+    const msg = document.getElementById('loadingMsg');
+    msg.style.display = 'inline';
+
+    fetch(`/api/temporal?type=${encodeURIComponent(type)}`)
+      .then(r => r.json())
+      .then(data => {
+        msg.style.display = 'none';
+
+        if (yearChart) yearChart.destroy();
+        yearChart = initChart('yearChart', 'line', data.by_year.years, data.by_year.counts, 'Incidents');
+
+        if (monthChart) monthChart.destroy();
+        monthChart = initChart('monthChart', 'bar', monthNames, data.by_month.counts, 'Avg Incidents');
+
+        renderHeatmap(data.heatmap.matrix, data.heatmap.days, data.heatmap.hours);
+
+        if (data.crime_types) {
+          const sel = document.getElementById('crimeType');
+          data.crime_types.forEach(t => {
+            if (!sel.querySelector(`option[value="${t}"]`)) {
+              const opt = document.createElement('option');
+              opt.value = t;
+              opt.textContent = t;
+              sel.appendChild(opt);
+            }
+          });
+        }
+      })
+      .catch(err => {
+        msg.textContent = '// error loading data';
+        console.error(err);
+      });
+  }
+
+  document.getElementById('crimeType').addEventListener('change', (e) => {
+    loadData(e.target.value);
+  });
+
+  loadData('ALL');
+})();
+</script>
