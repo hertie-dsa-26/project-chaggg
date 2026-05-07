@@ -12,15 +12,6 @@
 </div>
 
 <div class="page-eyebrow">codebook</div>
-
-<header class="codebook-header">
-  <h2 class="codebook-title">Variable codebook &amp; algorithm reference</h2>
-  <p class="codebook-lede">
-    Source: City of Chicago Data Portal — Crimes 2001 to Present.
-    Coverage 2002–2025, ~8.5M incidents.
-  </p>
-</header>
-
 {# ── Section nav ─────────────────────────────────────────── #}
 <nav class="codebook-toc" aria-label="Codebook contents">
   <a href="#how-it-works">01 · how it works</a>
@@ -78,7 +69,7 @@
     <h3 class="codebook-subhead">from-scratch vs. sklearn</h3>
     <p>
       The app offers two implementations of the same algorithm: a <strong>from-scratch</strong>
-      version built without machine learning libraries (the academic deliverable), and a
+      version built without machine learning libraries, and a
       <strong>sklearn mirror</strong> that uses standard Python libraries as a validation benchmark.
       Both should produce predictions within 5 percentage points of each other for the same inputs.
     </p>
@@ -115,8 +106,8 @@
             The category of crime being queried. Filters the dataset to records of that type before
             the neighbour search is run. Must match one of the <code>primary_type</code> values in
             the dataset (e.g. THEFT, BATTERY, NARCOTICS). The model is fitted only on the filtered
-            subset, so predictions are specific to that crime type. Using no filter is not
-            recommended as it mixes arrest patterns across very different crime categories.
+            subset, so predictions are specific to that crime type. Crime types only include those
+            with more than 5000 cases. 
           </td>
         </tr>
         <tr>
@@ -135,9 +126,7 @@
           <td>
             The calendar date of the query incident. Used to extract <code>month</code>,
             <code>day_of_week</code>, and <code>day_of_year</code>, which are then cyclically
-            encoded as (sin, cos) pairs. The year itself is <strong>not</strong> used as a feature —
-            only the position within the calendar year matters, so the model captures seasonal
-            patterns without being biased toward more recent years.
+            encoded as (sin, cos) pairs.
           </td>
         </tr>
         <tr>
@@ -153,8 +142,7 @@
           <th scope="row">algorithm</th>
           <td>dropdown</td>
           <td>
-            Which implementation to use: <strong>KNN (from scratch)</strong> — the hand-built
-            academic version; or <strong>KNN (sklearn)</strong> — the validation mirror built with
+            Which implementation to use: <strong>KNN (from scratch)</strong> or <strong>KNN (sklearn)</strong> — the validation mirror built with
             standard Python libraries. Both use identical feature sets, standardisation, and
             regularisation. Predictions should agree within |Δp| &lt; 0.05 for the same inputs.
           </td>
@@ -195,7 +183,7 @@
             <code>arrest</code> variable in the dataset (True if an arrest was made, False
             otherwise). The model predicts this probability locally: a logistic regression is fitted
             on the <em>k</em> nearest neighbours of the query point, and the resulting model is used
-            to predict the probability for the query itself. Across all crime types in the dataset,
+            to predict the probability for the query itself. Across the crime types (with more than 5000 cases) in the dataset,
             approximately <strong>28%</strong> of incidents result in an arrest — but rates vary
             substantially by crime type (e.g. narcotics arrests are disproportionately high; theft
             and criminal damage are low). The locally-fitted model reflects these differences by
@@ -212,7 +200,7 @@
   <h2 class="codebook-h2">04 · knn model feature set</h2>
   <p class="codebook-p">
     The 10 features used as inputs to the distance computation. All are derived from the app inputs
-    (section 02) and standardised with <code>StandardScaler</code> before use. The target variable
+    (section 02) and standardised before use. The target variable
     is <code>arrest</code>.
   </p>
 
@@ -222,8 +210,8 @@
         <tr><th>variable</th><th>type</th><th>category</th><th>description</th><th>notes</th></tr>
       </thead>
       <tbody>
-        <tr><th scope="row"><code>latitude</code></th><td>float</td><td>spatial</td><td>WGS-84 latitude — spatial proximity feature</td><td>standardised with <code>StandardScaler</code> before distance computation</td></tr>
-        <tr><th scope="row"><code>longitude</code></th><td>float</td><td>spatial</td><td>WGS-84 longitude — spatial proximity feature</td><td>standardised with <code>StandardScaler</code> before distance computation</td></tr>
+        <tr><th scope="row"><code>latitude</code></th><td>float</td><td>spatial</td><td>WGS-84 latitude — spatial proximity feature</td><td>standardised</td></tr>
+        <tr><th scope="row"><code>longitude</code></th><td>float</td><td>spatial</td><td>WGS-84 longitude — spatial proximity feature</td><td>standardised</td></tr>
         <tr><th scope="row"><code>hour_sin</code></th><td>float</td><td>temporal</td><td>sine encoding of hour (period = 24h)</td><td>avoids discontinuity at midnight (23:00 near 00:00)</td></tr>
         <tr><th scope="row"><code>hour_cos</code></th><td>float</td><td>temporal</td><td>cosine encoding of hour (period = 24h)</td><td>paired with <code>hour_sin</code> to encode full circular position</td></tr>
         <tr><th scope="row"><code>day_of_week_sin</code></th><td>float</td><td>temporal</td><td>sine encoding of day of week (period = 7 days)</td><td>avoids discontinuity at week boundary</td></tr>
@@ -237,77 +225,9 @@
   </div>
 </section>
 
-{# ── 5. Algorithm parameters ─────────────────────────────── #}
-<section id="parameters" class="codebook-section">
-  <h2 class="codebook-h2">05 · algorithm parameters</h2>
-  <p class="codebook-p">
-    Core settings of the KNN-LRR algorithm, documented for reproducibility and to support comparison
-    between the from-scratch and sklearn implementations.
-  </p>
-
-  <div class="cb-table-wrap">
-    <table class="cb-table">
-      <thead>
-        <tr><th>parameter</th><th>type</th><th>default</th><th>role</th><th>notes</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th scope="row"><code>k</code></th>
-          <td>integer</td>
-          <td>25 (app default)</td>
-          <td>number of nearest neighbours to retrieve for each query point</td>
-          <td>larger <em>k</em> = smoother estimates, less local sensitivity. Must be smaller than the number of records for the selected crime type.</td>
-        </tr>
-        <tr>
-          <th scope="row"><code>crime_type</code></th>
-          <td>string</td>
-          <td>required</td>
-          <td>filters the dataset to a single <code>primary_type</code> before neighbour search</td>
-          <td>must match <code>primary_type</code> spelling exactly (e.g. THEFT, BATTERY). If <code>None</code>, full dataset is used — not recommended.</td>
-        </tr>
-        <tr>
-          <th scope="row">distance metric</th>
-          <td>string</td>
-          <td>euclidean</td>
-          <td>metric used to measure similarity between query and dataset points in standardised feature space</td>
-          <td>both implementations use Euclidean distance over the 10-dimensional feature vector after <code>StandardScaler</code>.</td>
-        </tr>
-        <tr>
-          <th scope="row"><code>alpha</code> (α)</th>
-          <td>float</td>
-          <td>1.0</td>
-          <td>ridge regularisation strength in the from-scratch logistic regression</td>
-          <td>loss = NLL + α × ||w||². Corresponds to <code>C = 1/α</code> in sklearn. At α = 1.0, both implementations match.</td>
-        </tr>
-        <tr>
-          <th scope="row"><code>C</code></th>
-          <td>float</td>
-          <td>1.0</td>
-          <td>inverse regularisation strength in sklearn's <code>LogisticRegression</code></td>
-          <td><code>C = 1/α</code>. Set to 1.0 to match from-scratch. Do not change independently of <code>alpha</code>.</td>
-        </tr>
-        <tr>
-          <th scope="row"><code>StandardScaler</code></th>
-          <td>transform</td>
-          <td>fit on filtered data</td>
-          <td>z-score standardises all 10 features before distance computation</td>
-          <td>fit on the crime-type-filtered dataset; same scaler applied to the query point.</td>
-        </tr>
-        <tr>
-          <th scope="row"><code>fit_intercept</code></th>
-          <td>boolean</td>
-          <td>true</td>
-          <td>whether an intercept (bias) term is added to the logistic regression</td>
-          <td>from-scratch: bias column of 1s prepended manually. sklearn mirror: <code>fit_intercept=True</code>. Do <strong>NOT</strong> add bias column in <code>knn_sklearn</code>.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-{# ── 6. Source variables ─────────────────────────────────── #}
+{# ── 5. Source variables ─────────────────────────────────── #}
 <section id="source-variables" class="codebook-section">
-  <h2 class="codebook-h2">06 · source variables</h2>
+  <h2 class="codebook-h2">05 · source variables</h2>
   <p class="codebook-p">
     All columns present in the cleaned parquet file, derived directly from the Chicago
     Data Portal.
@@ -316,31 +236,31 @@
   <div class="cb-table-wrap">
     <table class="cb-table">
       <thead>
-        <tr><th>variable</th><th>type</th><th>missing</th><th>description</th><th>notes</th></tr>
+        <tr><th>variable</th><th>type</th><th>description</th><th>notes</th></tr>
       </thead>
       <tbody>
-        <tr><th scope="row"><code>id</code></th><td>integer</td><td>no</td><td>unique row identifier (Chicago Data Portal)</td><td>8,476,070 unique values</td></tr>
-        <tr><th scope="row"><code>case_number</code></th><td>string</td><td>no</td><td>CPD records division case number; unique per incident</td><td>e.g. <code>HZ100001</code></td></tr>
-        <tr><th scope="row"><code>date</code></th><td>datetime</td><td>no</td><td>date and time of incident occurrence</td><td>2002-01-01 to 2025-12-31</td></tr>
-        <tr><th scope="row"><code>block</code></th><td>string</td><td>no</td><td>partial address of incident (anonymised to block level)</td><td>e.g. <code>001XX N STATE ST</code></td></tr>
-        <tr><th scope="row"><code>iucr</code></th><td>string</td><td>no</td><td>Illinois Uniform Crime Reporting code</td><td>4-character code, e.g. <code>0110</code></td></tr>
-        <tr><th scope="row"><code>primary_type</code></th><td>category</td><td>no</td><td>top-level IUCR crime classification</td><td>35 distinct types; e.g. THEFT, BATTERY</td></tr>
-        <tr><th scope="row"><code>description</code></th><td>category</td><td>no</td><td>secondary IUCR classification (subtype of <code>primary_type</code>)</td><td>e.g. OVER $500, FROM BUILDING</td></tr>
-        <tr><th scope="row"><code>location_description</code></th><td>category</td><td>partial</td><td>type of location where incident occurred</td><td>e.g. STREET, RESIDENCE; ~0.4% missing</td></tr>
-        <tr><th scope="row"><code>arrest</code></th><td>boolean</td><td>no</td><td>whether an arrest was made (target variable)</td><td>True / False; ~28% True overall</td></tr>
-        <tr><th scope="row"><code>domestic</code></th><td>boolean</td><td>no</td><td>whether the incident was flagged as domestic violence</td><td>True / False</td></tr>
-        <tr><th scope="row"><code>beat</code></th><td>integer</td><td>no</td><td>CPD patrol beat (smallest geographic police unit)</td><td>integer code</td></tr>
-        <tr><th scope="row"><code>district</code></th><td>integer</td><td>partial</td><td>CPD police district number</td><td>1–25; ~0.1% missing</td></tr>
-        <tr><th scope="row"><code>ward</code></th><td>integer</td><td>partial</td><td>Chicago City Council ward number</td><td>1–50; ~0.2% missing</td></tr>
-        <tr><th scope="row"><code>community_area</code></th><td>integer</td><td>partial</td><td>Chicago community area number</td><td>1–77; ~0.2% missing</td></tr>
-        <tr><th scope="row"><code>fbi_code</code></th><td>string</td><td>no</td><td>FBI Uniform Crime Reporting classification code</td><td>e.g. <code>06</code> (Larceny), <code>08B</code> (Simple Assault)</td></tr>
-        <tr><th scope="row"><code>year</code></th><td>integer</td><td>no</td><td>year of incident</td><td>2002–2025 (2001 excluded; high missingness)</td></tr>
-        <tr><th scope="row"><code>updated_on</code></th><td>datetime</td><td>partial</td><td>date the record was last updated in the portal</td><td>~7% missing</td></tr>
-        <tr><th scope="row"><code>x_coordinate</code></th><td>float</td><td>partial</td><td>Illinois State Plane Easting coordinate (feet)</td><td>~1% missing; Chicago-local CRS</td></tr>
-        <tr><th scope="row"><code>y_coordinate</code></th><td>float</td><td>partial</td><td>Illinois State Plane Northing coordinate (feet)</td><td>~1% missing; Chicago-local CRS</td></tr>
-        <tr><th scope="row"><code>latitude</code></th><td>float</td><td>partial</td><td>WGS-84 latitude (decimal degrees)</td><td>~41.6 to ~42.0; ~1% missing</td></tr>
-        <tr><th scope="row"><code>longitude</code></th><td>float</td><td>partial</td><td>WGS-84 longitude (decimal degrees)</td><td>~−87.9 to ~−87.5; ~1% missing</td></tr>
-        <tr><th scope="row"><code>time</code></th><td>string</td><td>no</td><td>time component extracted from <code>date</code> (HH:MM:SS)</td><td>derived from <code>date</code> column during cleaning</td></tr>
+        <tr><th scope="row"><code>id</code></th><td>integer</td><td>unique row identifier (Chicago Data Portal)</td><td>-</td></tr>
+        <tr><th scope="row"><code>case_number</code></th><td>string</td><td>CPD records division case number; unique per incident</td><td>e.g. <code>HZ100001</code></td></tr>
+        <tr><th scope="row"><code>date</code></th><td>datetime</td><td>date and time of incident occurrence</td><td>2002-01-01 to 2025-12-31</td></tr>
+        <tr><th scope="row"><code>block</code></th><td>string</td><td>partial address of incident (anonymised to block level)</td><td>e.g. <code>001XX N STATE ST</code></td></tr>
+        <tr><th scope="row"><code>iucr</code></th><td>string</td><td>Illinois Uniform Crime Reporting code</td><td>4-character code, e.g. <code>0110</code></td></tr>
+        <tr><th scope="row"><code>primary_type</code></th><td>category</td><td>top-level IUCR crime classification</td><td>35 distinct types; e.g. <code>THEFT</code>, <code>BATTERY</code></td></tr>
+        <tr><th scope="row"><code>description</code></th><td>category</td><td>secondary IUCR classification (subtype of <code>primary_type</code>)</td><td>e.g. <code>$500 AND UNDER</code></td></tr>
+        <tr><th scope="row"><code>location_description</code></th><td>category</td><td>type of location where incident occurred</td><td>e.g. <code>STREET</code>, <code>RESIDENCE</code>; ~0.4% missing</td></tr>
+        <tr><th scope="row"><code>arrest</code></th><td>boolean</td><td>whether an arrest was made (target variable)</td><td>True / False; ~28% True overall</td></tr>
+        <tr><th scope="row"><code>domestic</code></th><td>boolean</td><td>whether the incident was flagged as domestic violence</td><td>True / False</td></tr>
+        <tr><th scope="row"><code>beat</code></th><td>integer</td><td>CPD patrol beat (smallest geographic police unit)</td><td>integer code</td></tr>
+        <tr><th scope="row"><code>district</code></th><td>integer</td><td>CPD police district number</td><td>1–25; ~0.1% missing</td></tr>
+        <tr><th scope="row"><code>ward</code></th><td>integer</td><td>Chicago City Council ward number</td><td>1–50; ~0.2% missing</td></tr>
+        <tr><th scope="row"><code>community_area</code></th><td>integer</td><td>Chicago community area number</td><td>1–77; ~0.2% missing</td></tr>
+        <tr><th scope="row"><code>fbi_code</code></th><td>string</td><td>FBI Uniform Crime Reporting classification code</td><td>e.g. <code>06</code> (Larceny), <code>08B</code> (Simple Assault)</td></tr>
+        <tr><th scope="row"><code>year</code></th><td>integer</td><td>year of incident</td><td>2002–2025 (2001 excluded; high missingness)</td></tr>
+        <tr><th scope="row"><code>updated_on</code></th><td>datetime</td><td>date the record was last updated in the portal</td><td>~7% missing</td></tr>
+        <tr><th scope="row"><code>x_coordinate</code></th><td>float</td><td>Illinois State Plane Easting coordinate (feet)</td><td>~1% missing; Chicago-local CRS</td></tr>
+        <tr><th scope="row"><code>y_coordinate</code></th><td>float</td><td>Illinois State Plane Northing coordinate (feet)</td><td>~1% missing; Chicago-local CRS</td></tr>
+        <tr><th scope="row"><code>latitude</code></th><td>float</td><td>WGS-84 latitude (decimal degrees)</td><td>~41.6 to ~42.0; ~1% missing</td></tr>
+        <tr><th scope="row"><code>longitude</code></th><td>float</td><td>WGS-84 longitude (decimal degrees)</td><td>~−87.9 to ~−87.5; ~1% missing</td></tr>
+        <tr><th scope="row"><code>time</code></th><td>string</td><td>time component extracted from <code>date</code> (HH:MM:SS)</td><td>derived from <code>date</code> column during cleaning</td></tr>
       </tbody>
     </table>
   </div>
@@ -350,7 +270,7 @@
 <section id="engineered-variables" class="codebook-section">
   <h2 class="codebook-h2">07 · engineered variables</h2>
   <p class="codebook-p">
-    Created by <code>src/preprocess_data.py</code> at runtime. The cleaned parquet contains only
+    Created for the algorithm at runtime. The cleaned parquet contains only
     source columns; all temporal and cyclic features are derived from the <code>date</code> string
     column. Cyclic encoding maps each time unit to a (sin, cos) pair so distances wrap correctly at
     period boundaries.
@@ -396,9 +316,8 @@
     <dt>collapse to incident level</dt>
     <dd>
       The raw source data is person-level (multiple rows per <code>case_number</code> for
-      multi-person incidents). <code>preprocess_data()</code> collapses to one row per incident
-      using <code>groupby(case_number).agg()</code>. For <code>arrest</code>, the <code>max</code>
-      is taken (True if any person was arrested).
+      multi-person incidents). We collapsed the data to one row per incident. 
+      For <code>arrest</code>, the <code>max</code> is taken (True if any person was arrested).
     </dd>
 
     <dt>local parquet vs. pipeline output</dt>
