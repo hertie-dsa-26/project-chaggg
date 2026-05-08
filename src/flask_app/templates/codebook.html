@@ -3,7 +3,7 @@
 {% block title %}Codebook · chicago_crime.db{% endblock %}
 
 {# Highlight the closest existing nav item — codebook is a method/data reference #}
-{% block nav_method %}active{% endblock %}
+{% block nav_overview %}active{% endblock %}
 
 {% block content %}
 <div class="page-meta">
@@ -37,15 +37,15 @@
     <p>
       When you submit a query — specifying a crime type, a location on the map, a date, and a time —
       the algorithm searches the historical Chicago crime dataset (2002–2025) for the
-      <em>k</em> incidents most similar to yours. Similarity is measured in terms of both
-      <em>where</em> and <em>when</em> the crime occurred. Incidents that happened nearby and at a
+      <strong>k</strong> incidents most similar to yours. Similarity is measured in terms of both
+      <strong>where</strong> and <strong>when</strong> the crime occurred. Incidents that happened nearby and at a
       similar time of day, day of week, and time of year are considered closer neighbours.
     </p>
 
     <h3 class="codebook-subhead">step 2 · learn from those neighbours</h3>
     <p>
-      Once the <em>k</em> nearest neighbours are identified, a logistic regression model is fitted
-      <em>locally</em> on just those <em>k</em> records. Logistic regression is a statistical method
+      Once the <strong>k</strong> nearest neighbours are identified, a logistic regression model is fitted
+      <strong>locally</strong> on just those <strong>k</strong> records. Logistic regression is a statistical method
       that models the relationship between a set of input features and a binary outcome — in this
       case, whether an arrest was made (True or False). A Ridge penalty is applied to prevent the
       model from over-fitting to the small local sample.
