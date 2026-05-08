@@ -3,11 +3,11 @@
 {% block title %}Codebook · chicago_crime.db{% endblock %}
 
 {# Highlight the closest existing nav item — codebook is a method/data reference #}
-{% block nav_method %}active{% endblock %}
+{% block nav_overview %}active{% endblock %}
 
 {% block content %}
 <div class="page-meta">
-  <span></span>
+  <span>doc · codebook</span>
   <span>chicago_crime.db / 2002–2025</span>
 </div>
 
@@ -165,13 +165,7 @@
 {# ── 3. Model output ─────────────────────────────────────── #}
 <section id="model-output" class="codebook-section">
   <h2 class="codebook-h2">03 · model output</h2>
-  <p class="codebook-p">The model predicts this probability locally: a logistic ridge regression with parameters <code>alpha=1.0, lr=0.1, n_iter=1000</code> is fitted
-            on the <strong>k</strong> nearest neighbours of the query point, and the resulting model is used
-            to predict the probability for the query itself. Across the crime types (with more than 5000 cases) in the dataset,
-            approximately <strong>28%</strong> of incidents result in an arrest — but rates vary
-            substantially by crime type (e.g. narcotics arrests are disproportionately high; theft
-            and criminal damage are low). The locally-fitted model reflects these differences by
-            conditioning on crime type and spatiotemporal context.</p>
+  <p class="codebook-p">The single value returned by the algorithm for each query.</p>
 
   <div class="cb-table-wrap">
     <table class="cb-table">
@@ -186,7 +180,13 @@
             The estimated probability that a crime incident with the given characteristics (crime
             type, location, date, and time) results in an arrest. Derived from the Boolean
             <code>arrest</code> variable in the dataset (True if an arrest was made, False
-            otherwise). 
+            otherwise). The model predicts this probability locally: a logistic regression is fitted
+            on the <em>k</em> nearest neighbours of the query point, and the resulting model is used
+            to predict the probability for the query itself. Across the crime types (with more than 5000 cases) in the dataset,
+            approximately <strong>28%</strong> of incidents result in an arrest — but rates vary
+            substantially by crime type (e.g. narcotics arrests are disproportionately high; theft
+            and criminal damage are low). The locally-fitted model reflects these differences by
+            conditioning on crime type and spatiotemporal context.
           </td>
         </tr>
       </tbody>
@@ -224,45 +224,9 @@
   </div>
 </section>
 
-{# ── 5. Engineered variables ─────────────────────────────── #}
-<section id="engineered-variables" class="codebook-section">
-  <h2 class="codebook-h2">05 · engineered variables</h2>
-  <p class="codebook-p">
-    Created for the algorithm at runtime. The cleaned parquet contains only
-    source columns; all temporal and cyclic features are derived from the <code>date</code> string
-    column. Cyclic encoding maps each time unit to a (sin, cos) pair so distances wrap correctly at
-    period boundaries.
-  </p>
-
-  <div class="cb-table-wrap">
-    <table class="cb-table">
-      <thead>
-        <tr><th>variable</th><th>type</th><th>missing</th><th>description</th><th>notes</th></tr>
-      </thead>
-      <tbody>
-        <tr><th scope="row"><code>month</code></th><td>integer</td><td>no</td><td>calendar month of incident</td><td>1–12</td></tr>
-        <tr><th scope="row"><code>day</code></th><td>integer</td><td>no</td><td>day of month of incident</td><td>1–31</td></tr>
-        <tr><th scope="row"><code>hour</code></th><td>integer</td><td>no</td><td>hour of day of incident (24-hour clock)</td><td>0–23</td></tr>
-        <tr><th scope="row"><code>minute</code></th><td>integer</td><td>no</td><td>minute of hour of incident</td><td>0–59</td></tr>
-        <tr><th scope="row"><code>day_of_week</code></th><td>integer</td><td>no</td><td>day of week (Monday = 0, Sunday = 6)</td><td>0–6</td></tr>
-        <tr><th scope="row"><code>day_of_year</code></th><td>integer</td><td>no</td><td>day of year</td><td>1–366</td></tr>
-        <tr><th scope="row"><code>people_involved</code></th><td>integer</td><td>no</td><td>number of people linked to the same case number</td><td>derived pre-collapse; 1+ per incident</td></tr>
-        <tr><th scope="row"><code>hour_sin</code></th><td>float</td><td>no</td><td>sine encoding of hour (period = 24h)</td><td>sin(2π × hour / 24); range [−1, 1]</td></tr>
-        <tr><th scope="row"><code>hour_cos</code></th><td>float</td><td>no</td><td>cosine encoding of hour (period = 24h)</td><td>cos(2π × hour / 24); range [−1, 1]</td></tr>
-        <tr><th scope="row"><code>day_of_week_sin</code></th><td>float</td><td>no</td><td>sine encoding of day of week (period = 7 days)</td><td>sin(2π × day_of_week / 7); range [−1, 1]</td></tr>
-        <tr><th scope="row"><code>day_of_week_cos</code></th><td>float</td><td>no</td><td>cosine encoding of day of week (period = 7 days)</td><td>cos(2π × day_of_week / 7); range [−1, 1]</td></tr>
-        <tr><th scope="row"><code>month_sin</code></th><td>float</td><td>no</td><td>sine encoding of month (period = 12 months)</td><td>sin(2π × (month−1) / 12); range [−1, 1]</td></tr>
-        <tr><th scope="row"><code>month_cos</code></th><td>float</td><td>no</td><td>cosine encoding of month (period = 12 months)</td><td>cos(2π × (month−1) / 12); range [−1, 1]</td></tr>
-        <tr><th scope="row"><code>day_of_year_sin</code></th><td>float</td><td>no</td><td>sine encoding of day of year (period = 365 days)</td><td>sin(2π × (day_of_year−1) / 365); range [−1, 1]</td></tr>
-        <tr><th scope="row"><code>day_of_year_cos</code></th><td>float</td><td>no</td><td>cosine encoding of day of year (period = 365 days)</td><td>cos(2π × (day_of_year−1) / 365); range [−1, 1]</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-{# ── 6. Source variables ─────────────────────────────────── #}
+{# ── 5. Source variables ─────────────────────────────────── #}
 <section id="source-variables" class="codebook-section">
-  <h2 class="codebook-h2">06 · source variables</h2>
+  <h2 class="codebook-h2">05 · source variables</h2>
   <p class="codebook-p">
     All columns present in the cleaned parquet file, derived directly from the Chicago
     Data Portal.
@@ -301,11 +265,45 @@
   </div>
 </section>
 
+{# ── 7. Engineered variables ─────────────────────────────── #}
+<section id="engineered-variables" class="codebook-section">
+  <h2 class="codebook-h2">07 · engineered variables</h2>
+  <p class="codebook-p">
+    Created for the algorithm at runtime. The cleaned parquet contains only
+    source columns; all temporal and cyclic features are derived from the <code>date</code> string
+    column. Cyclic encoding maps each time unit to a (sin, cos) pair so distances wrap correctly at
+    period boundaries.
+  </p>
 
+  <div class="cb-table-wrap">
+    <table class="cb-table">
+      <thead>
+        <tr><th>variable</th><th>type</th><th>missing</th><th>description</th><th>notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row"><code>month</code></th><td>integer</td><td>no</td><td>calendar month of incident</td><td>1–12</td></tr>
+        <tr><th scope="row"><code>day</code></th><td>integer</td><td>no</td><td>day of month of incident</td><td>1–31</td></tr>
+        <tr><th scope="row"><code>hour</code></th><td>integer</td><td>no</td><td>hour of day of incident (24-hour clock)</td><td>0–23</td></tr>
+        <tr><th scope="row"><code>minute</code></th><td>integer</td><td>no</td><td>minute of hour of incident</td><td>0–59</td></tr>
+        <tr><th scope="row"><code>day_of_week</code></th><td>integer</td><td>no</td><td>day of week (Monday = 0, Sunday = 6)</td><td>0–6</td></tr>
+        <tr><th scope="row"><code>day_of_year</code></th><td>integer</td><td>no</td><td>day of year</td><td>1–366</td></tr>
+        <tr><th scope="row"><code>people_involved</code></th><td>integer</td><td>no</td><td>number of people linked to the same case number</td><td>derived pre-collapse; 1+ per incident</td></tr>
+        <tr><th scope="row"><code>hour_sin</code></th><td>float</td><td>no</td><td>sine encoding of hour (period = 24h)</td><td>sin(2π × hour / 24); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>hour_cos</code></th><td>float</td><td>no</td><td>cosine encoding of hour (period = 24h)</td><td>cos(2π × hour / 24); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>day_of_week_sin</code></th><td>float</td><td>no</td><td>sine encoding of day of week (period = 7 days)</td><td>sin(2π × day_of_week / 7); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>day_of_week_cos</code></th><td>float</td><td>no</td><td>cosine encoding of day of week (period = 7 days)</td><td>cos(2π × day_of_week / 7); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>month_sin</code></th><td>float</td><td>no</td><td>sine encoding of month (period = 12 months)</td><td>sin(2π × (month−1) / 12); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>month_cos</code></th><td>float</td><td>no</td><td>cosine encoding of month (period = 12 months)</td><td>cos(2π × (month−1) / 12); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>day_of_year_sin</code></th><td>float</td><td>no</td><td>sine encoding of day of year (period = 365 days)</td><td>sin(2π × (day_of_year−1) / 365); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>day_of_year_cos</code></th><td>float</td><td>no</td><td>cosine encoding of day of year (period = 365 days)</td><td>cos(2π × (day_of_year−1) / 365); range [−1, 1]</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 
-{# ── 7. Notes ────────────────────────────────────────────── #}
+{# ── 8. Notes ────────────────────────────────────────────── #}
 <section id="notes" class="codebook-section">
-  <h2 class="codebook-h2">07 · data notes &amp; known issues</h2>
+  <h2 class="codebook-h2">08 · data notes &amp; known issues</h2>
 
   <dl class="cb-notes">
     <dt>year 2001 excluded</dt>
@@ -319,26 +317,6 @@
       The raw source data is person-level (multiple rows per <code>case_number</code> for
       multi-person incidents). We collapsed the data to one row per incident. 
       For <code>arrest</code>, the <code>max</code> is taken (True if any person was arrested).
-    </dd>
-
-    <dt>invalid values</dt>
-    <dd>
-      When trying to standardise our data used for the algorithm we found the largest distance between two coordinates to be
-      ~ 600km. As we are trying to predict arrest probabilities within the city of Chicago, we decided to bound our coordinates
-      to the city's limits. We also dropped all instances of missing coordinates.
-    </dd>
-
-    <dt>streamlining of crime types</dt>
-    <dd>
-      The raw data included both <code>CRIM SEXUAL ASSAULT</code> and <code>CRIMINAL SEXUAL ASSAULT</code> as primary crime types. 
-      After having a closer look at the <a href="https://data.cityofchicago.org/widgets/c7ck-438e" target="_blank">Illinois Uniform Crime Reporting (IUCR) Codes</a>, we found no record of <code>CRIM SEXUAL ASSAULT</code>
-      being an additonal crime type and therefore renamed it to match the correct spelling.
-    </dd>
-
-    <dt>minimum number of incidents per crime type</dt>
-    <dd>
-      We decided to keep crimes for which at least 5,000 incidents were reported. 
-      The variable <code>case_number</code> identifies every unique incident.
     </dd>
 
     <dt>local parquet vs. pipeline output</dt>

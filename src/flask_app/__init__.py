@@ -72,21 +72,15 @@ def create_app():
     def method():
         return render_template("method.html")
 
-    @app.route("/algorithm")
-    def algorithm():
-        return render_template("algorithm.html")
 
     @app.route("/about")
     def about():
         return render_template("about.html")
     
-    @app.route("/overview")
+    @app.route("/data-exploration")
     def overview():
         return render_template("overview.html")
 
-    @app.route("/viz/placeholder")
-    def viz_placeholder():
-        return render_template("viz_placeholder.html")
 
     @app.route("/dashboards/time")
     def dashboard_time():
@@ -109,13 +103,18 @@ def create_app():
             rows=len(app.config["CRIME_DF"]),
         )
 
-    @app.route("/dashboards/algorithm")
+    @app.route("/algorithm")
     def dashboard_algorithm():
         crime_types = sorted(app.config["KNN_ARTIFACTS"].keys())
         return render_template(
             "dashboards/algorithm.html",
             crime_types=crime_types,
         )
+    
+    @app.route("/codebook")
+    def codebook():
+        return render_template(
+            "codebook.html")
 
     @app.route("/api/predict", methods=["POST"])
     def api_predict():
