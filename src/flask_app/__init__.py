@@ -16,6 +16,7 @@ from .estimators import (
     precompute_naive_stats,
 )
 from algorithms.knn_lrr import predict_arrest_probability
+from algorithms.knn_sklearn import predict_arrest_probability_sklearn
 
 
 def create_app():
@@ -131,7 +132,9 @@ def create_app():
         except (KeyError, TypeError, ValueError) as e:
             return jsonify({"error": f"Invalid input: {e}"}), 400
 
-        if algorithm not in ("knn", "naive_community_area"):
+        if algorithm == "naive_community_area":
+            return jsonify({"error": "Naive community area baseline not implemented yet."}), 501
+        if algorithm not in {"knn", "knn_sklearn"}:
             return jsonify({"error": f"Unknown algorithm: {algorithm}"}), 400
 
         artifacts = app.config["KNN_ARTIFACTS"]
@@ -194,8 +197,13 @@ def create_app():
             doy_sin, doy_cos,
         ], dtype=float)
 
+        predictor = (
+            predict_arrest_probability_sklearn
+            if algorithm == "knn_sklearn"
+            else predict_arrest_probability
+        )
         try:
-            probability = predict_arrest_probability(
+            probability = predictor(
                 artifact=artifacts[crime_type],
                 query_raw=query_raw,
                 k=k,
@@ -205,12 +213,12 @@ def create_app():
 
         return jsonify({
             "probability": probability,
+            "algorithm": algorithm,
             "k": k,
             "crime_type": crime_type,
             "n_total": int(artifacts[crime_type]["label"].shape[0]),
             "derived": {"day_of_week": day_of_week, "day_of_year": day_of_year},
         })
-
     
     @app.route("/dashboards")
     def dashboards():
