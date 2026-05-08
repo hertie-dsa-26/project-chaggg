@@ -28,7 +28,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.linear_model import LogisticRegression
 
-from algorithms.knn_lrr import FEATURE_COLUMNS, N_FEATURES
+from algorithms.knn_lrr import N_FEATURES
 
 
 def predict_arrest_probability_sklearn(
