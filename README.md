@@ -50,7 +50,8 @@ project-chaggg/
     └── precomputed/
 ```
 
-The data folder only contains the cleaned parquet file and the Primary Crime Type Data Bundles. After successful download skip straight to **Step 4**.
+The data folder only contains the cleaned parquet file and the Primary Crime Type Data Bundles. 
+After successful download skip straight to **Step 4**.
 
 ---
 
