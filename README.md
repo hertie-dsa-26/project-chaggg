@@ -39,7 +39,7 @@ Choose one of the two options below.
 
 #### Option A — Download the data folder (recommended)
 
-Download the `data/` folder from [Google Drive](<https://drive.google.com/drive/folders/1Ro5IE1SdIQmwJOmQSjx8Rysdh_oac_AI?usp=sharing>) and place it at the
+Download the `data/` folder from [Google Drive](<https://drive.google.com/drive/folders/1hVUJNurriQMhopf3Iv9zbpvWWFJcHixw?usp=sharing>) and place it at the
 project root so the structure looks like:
 
 ```
