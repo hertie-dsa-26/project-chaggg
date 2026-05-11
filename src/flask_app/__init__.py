@@ -221,25 +221,35 @@ def create_app():
     
     @app.route("/api/temporal")
     def api_temporal():
-        from flask import jsonify, request
         df = app.config["CRIME_DF"]
         crime_type = request.args.get("type", "ALL")
+        year = request.args.get("year", "ALL")
 
-        # crime types for dropdown (before filtering)
+        # crime types and years for dropdowns (before filtering)
         types = sorted(df["primary_type"].dropna().unique().tolist()) if crime_type == "ALL" else None
+        years = sorted(df["year"].dropna().unique().astype(int).tolist()) if year == "ALL" else None
 
         if crime_type != "ALL":
             df = df[df["primary_type"] == crime_type]
+        if year != "ALL":
+            df = df[df["year"] == int(year)]
 
         # chart 1: total by year
         by_year = df.groupby("year").size().reset_index(name="count").sort_values("year")
 
         # chart 2: avg by month
-        avg_month = (
-            df.groupby(["year", "month"]).size().reset_index(name="count")
-            .groupby("month")["count"].mean().round(0).reset_index()
-            .sort_values("month")
-        )
+        if year != "ALL":
+            # single year: just count directly
+            avg_month = (
+                df.groupby("month").size().reindex(range(1, 13), fill_value=0)
+                .reset_index(name="count").rename(columns={"index": "month"})
+            )
+        else:
+            avg_month = (
+                df.groupby(["year", "month"]).size().reset_index(name="count")
+                .groupby("month")["count"].mean().round(0).reset_index()
+                .sort_values("month")
+            )
 
         # chart 3: hour x day_of_week heatmap
         day_map = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
@@ -249,15 +259,16 @@ def create_app():
             .groupby(["hour", "day_name"]).size().unstack(fill_value=0)
             .reindex(index=range(24), columns=day_order, fill_value=0)
         )
-        matrix = heatmap.values.tolist()
 
         result = {
             "by_year": {"years": by_year["year"].tolist(), "counts": by_year["count"].tolist()},
-            "by_month": {"months": avg_month["month"].tolist(), "counts": avg_month["count"].tolist()},
-            "heatmap": {"matrix": matrix, "days": day_order, "hours": list(range(24))},
+            "by_month": {"months": avg_month["month"].tolist(), "counts": avg_month["count"].round(0).astype(int).tolist()},
+            "heatmap": {"matrix": heatmap.values.tolist(), "days": day_order, "hours": list(range(24))},
         }
         if types:
             result["crime_types"] = types
+        if years:
+            result["years"] = years
 
         return jsonify(result)
 
