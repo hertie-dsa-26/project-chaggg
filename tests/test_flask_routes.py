@@ -13,16 +13,18 @@ class TestFlaskRoutes(unittest.TestCase):
         routes = [
             "/",
             "/about",
-            "/viz/placeholder",
+            "/method",
+            "/data-exploration",
             "/dashboards/time",
             "/dashboards/space",
-            "/dashboards/types",
-            "/dashboards/algorithm"
+            "/algorithm",
+            "/codebook"
         ]
         for route in routes:
             with self.subTest(route=route):
                 resp = self.client.get(route)
                 self.assertEqual(resp.status_code, 200)
+
 
 class TestApiPredict(unittest.TestCase):
     """Tests for POST /api/predict.
@@ -41,7 +43,7 @@ class TestApiPredict(unittest.TestCase):
 
     def _valid_payload(self):
         return {
-            "algorithm": "knn",
+            "algorithm": "knn_lrr",
             "crime_type": "homicide",
             "lat": 41.8781,
             "lon": -87.6298,
@@ -126,16 +128,37 @@ class TestApiPredict(unittest.TestCase):
 
     # --- Algorithm dispatch -------------------------------------------------
 
-    def test_naive_algorithm_returns_501(self):
-        payload = {**self._valid_payload(), "algorithm": "naive"}
+    def test_naive_algorithm_returns_200(self):
+        payload = {**self._valid_payload(), "algorithm": "naive_community_area"}
         resp = self.client.post("/api/predict", json=payload)
-        self.assertEqual(resp.status_code, 501)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_naive_response_contains_probability_in_unit_interval(self):
+        payload = {**self._valid_payload(), "algorithm": "naive_community_area"}
+        resp = self.client.post("/api/predict", json=payload)
+        data = resp.get_json()
+        self.assertIn("probability", data)
+        self.assertGreaterEqual(data["probability"], 0.0)
+        self.assertLessEqual(data["probability"], 1.0)
+
+    def test_naive_response_includes_derived_fallback(self):
+        payload = {**self._valid_payload(), "algorithm": "naive_community_area"}
+        resp = self.client.post("/api/predict", json=payload)
+        data = resp.get_json()
+        self.assertIn("derived", data)
+        self.assertIn("fallback", data["derived"])
+
+    def test_sklearn_algorithm_returns_200(self):
+        payload = {**self._valid_payload(), "algorithm": "knn_sklearn"}
+        resp = self.client.post("/api/predict", json=payload)
+        self.assertEqual(resp.status_code, 200)
 
     def test_unknown_algorithm_returns_400(self):
         payload = {**self._valid_payload(), "algorithm": "magic"}
         resp = self.client.post("/api/predict", json=payload)
         self.assertEqual(resp.status_code, 400)
+        self.assertIn("Unknown algorithm", resp.get_json()["error"])
+
 
 if __name__ == "__main__":
     unittest.main()
-

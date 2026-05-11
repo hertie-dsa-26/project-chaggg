@@ -6,11 +6,9 @@ Loads precomputed artifacts and prompts the user for inputs.
 Run with:
     uv run python -m src.crime_knn
 """
-import sys, os
+
 import numpy as np
 import pyinputplus as pyip
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from algorithms.knn_lrr import predict_arrest_probability
 from src.flask_app.load_crime_artifacts import load_knn_arrays

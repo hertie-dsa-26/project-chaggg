@@ -1,9 +1,7 @@
-import sys, os
 import pytest
 import pandas as pd
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-from clean import add_cyclical_time_features
+from scripts.clean import add_cyclical_time_features
 
 def test_cyclical_encoding_hour_zero():
     df = pd.DataFrame({'hour': [0], 'day_of_week': [0], 'month': [1], 'day_of_year': [1]})

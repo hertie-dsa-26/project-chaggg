@@ -18,6 +18,8 @@ from .estimators import (
 from algorithms.knn_lrr import predict_arrest_probability
 from algorithms.knn_sklearn import predict_arrest_probability_sklearn
 
+#defining valid algorithms before create_app for later test
+VALID_ALGORITHMS = {"naive_community_area", "knn_lrr", "knn_sklearn"}
 
 def create_app():
     """Create and configure the Flask application."""
@@ -132,6 +134,9 @@ def create_app():
         except (KeyError, TypeError, ValueError) as e:
             return jsonify({"error": f"Invalid input: {e}"}), 400
 
+        if algorithm not in VALID_ALGORITHMS:
+            return jsonify({"error": f"Unknown algorithm: {algorithm}"}), 400
+        
         artifacts = app.config["KNN_ARTIFACTS"]
         if crime_type not in artifacts:
             return jsonify({

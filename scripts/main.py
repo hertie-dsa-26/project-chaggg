@@ -7,14 +7,10 @@ Usage from project root:
 import os
 import sys
 
-# Add scripts directory to path so we can import the modules
-sys.path.insert(0, os.path.dirname(__file__))
-
 # Import pipeline modules
-import fetch
-import clean
-from utils import convert_to_parquet, get_data_info
-from config import RAW_CSV, CLEANED_CSV, CLEANED_PARQUET
+from scripts import fetch, clean
+from scripts.utils import convert_to_parquet, get_data_info
+from scripts.config import RAW_CSV, CLEANED_CSV, CLEANED_PARQUET
 
 def run_pipeline(skip_download=False):
     """
