@@ -112,6 +112,10 @@
   <div class="controls">
     <label for="crimeType">Crime Type &gt;</label>
     <select id="crimeType"><option value="ALL">All Types</option></select>
+
+    <label for="yearSelect">Year &gt;</label>
+    <select id="yearSelect"><option value="ALL">All Years</option></select>
+
     <span class="loading" id="loadingMsg" style="display:none">// loading...</span>
   </div>
 
@@ -261,11 +265,11 @@
     table.innerHTML = html;
   }
 
-  function loadData(type) {
+  function loadData(type, year) {
     const msg = document.getElementById('loadingMsg');
     msg.style.display = 'inline';
 
-    fetch(`/api/temporal?type=${encodeURIComponent(type)}`)
+    fetch(`/api/temporal?type=${encodeURIComponent(type)}&year=${encodeURIComponent(year)}`)
       .then(r => r.json())
       .then(data => {
         msg.style.display = 'none';
@@ -274,7 +278,8 @@
         yearChart = initChart('yearChart', 'line', data.by_year.years, data.by_year.counts, 'Incidents');
 
         if (monthChart) monthChart.destroy();
-        monthChart = initChart('monthChart', 'bar', monthNames, data.by_month.counts, 'Avg Incidents');
+        const monthLabel = year !== 'ALL' ? 'Incidents' : 'Avg Incidents';
+        monthChart = initChart('monthChart', 'bar', monthNames, data.by_month.counts, monthLabel);
 
         renderHeatmap(data.heatmap.matrix, data.heatmap.days, data.heatmap.hours);
 
@@ -283,8 +288,18 @@
           data.crime_types.forEach(t => {
             if (!sel.querySelector(`option[value="${t}"]`)) {
               const opt = document.createElement('option');
-              opt.value = t;
-              opt.textContent = t;
+              opt.value = t; opt.textContent = t;
+              sel.appendChild(opt);
+            }
+          });
+        }
+
+        if (data.years) {
+          const sel = document.getElementById('yearSelect');
+          data.years.forEach(y => {
+            if (!sel.querySelector(`option[value="${y}"]`)) {
+              const opt = document.createElement('option');
+              opt.value = y; opt.textContent = y;
               sel.appendChild(opt);
             }
           });
@@ -296,10 +311,15 @@
       });
   }
 
-  document.getElementById('crimeType').addEventListener('change', (e) => {
-    loadData(e.target.value);
-  });
+  // Initial load
+  loadData('ALL', 'ALL');
 
-  loadData('ALL');
+  // Update when either dropdown changes
+  document.getElementById('crimeType').addEventListener('change', (e) => {
+    loadData(e.target.value, document.getElementById('yearSelect').value);
+  });
+  document.getElementById('yearSelect').addEventListener('change', (e) => {
+    loadData(document.getElementById('crimeType').value, e.target.value);
+  });
 })();
 </script>
