@@ -5,10 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-
-
-def normalise_crime_type(s: str) -> str:
-    return s.strip().lower().replace(" ", "_").replace("/", "_")
+from scripts.utils import normalise_crime_type
 
 GEOJSON_PATH = Path(__file__).resolve().parent / "static" / "data" / "space" / "chicago_community_areas.geojson"
 

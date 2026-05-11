@@ -8,49 +8,72 @@ Working in a team of 7 students, we are designing and developing a comprehensive
 
 ## Dataset
 
-We are using the City of Chicago's crime dataset, which provides comprehensive information on reported incidents from 2001 to present. We are using all data up to 31 December 2025.
+We are using the City of Chicago's crime dataset, which provides comprehensive information on reported incidents from 2001 to present. We are using all data from 01 January 2002 up to 31 December 2025.
 
 [Crimes - 2001 to Present](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data)
 
-## Data Setup
+## Getting Started
 
-The datasets are not stored in this repository due to their size. To download and prepare the data:
+### Prerequisites
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager
 
-1. **Clone the repository:**
-```bash
-   git clone 
-   cd project-chaggg
+### 1. Clone the repository
+
+```
+git clone https://github.com/hertie-dsa-26/project-chaggg.git
+cd project-chaggg
+````
+
+### 2. Install dependencies
+
+```
+uv sync
 ```
 
-2. **Install dependencies:**
-```bash
-   uv sync
+### 3. Set up the data
+
+Choose one of the two options below.
+
+---
+
+#### Option A — Download the data folder (recommended)
+
+Download the `data/` folder from [Google Drive](<https://drive.google.com/drive/folders/1Ro5IE1SdIQmwJOmQSjx8Rysdh_oac_AI?usp=sharing>) and place it at the
+project root so the structure looks like:
+
+```
+project-chaggg/
+└── data/
+    ├── raw/
+    ├── cleaned/
+    └── precomputed/
 ```
 
-3. **Run the data pipeline:**
-```bash
-   uv run scripts/main.py
+The data folder only contains the cleaned parquet file and the Primary Crime Type Data Bundles. 
+After successful download skip straight to **Step 4**.
+
+---
+
+#### Option B — Run the full data pipeline
+
+This will download the raw data from the Chicago Data Portal, clean it, and
+generate all precomputed artifacts. It may take several minutes.
+
+```
+uv run python -m scripts.main
 ```
 
-## Development Workflow
+Follow the prompts in the terminal.
 
-To maintain code quality and ensure collaboration, please follow this workflow:
+---
 
-1. **Create a branch** – Create a new branch either:
-   - Locally in your IDE, or
-   - On GitHub (then switch to it in your IDE)
-2. **Develop locally** – Write and test code in your personal notebooks until you're confident it works
-3. **Integrate code** – Copy your working code into the relevant script
-4. **Commit changes** – Commit your changes to this branch with a descriptive commit message that everyone understand
-6. **Open a pull request** – Create a pull request with a brief description of your changes
-7. **Request review** – Tag a team member for code review
-8. **Merge** – After approval, the pull request can be merged into `main`
+### 4. Run the app
 
-### Important Guidelines
+```
+uv run run_app.py 
+```
 
-⚠️ **DO NOT commit directly to `main`**
-
-✅ **ALL CODE must be reviewed by a second person before merging**
-
+Then open http://127.0.0.1:5000 in your browser.
 
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/D69TCBIW)
