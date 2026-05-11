@@ -1,103 +1,574 @@
 {% extends "base.html" %}
 
-{% block title %}Method · Chicago Crime Analysis{% endblock %}
+{% block title %}Codebook · chicago_crime.db{% endblock %}
+
+{# Highlight the closest existing nav item — codebook is a method/data reference #}
 {% block nav_method %}active{% endblock %}
 
 {% block content %}
 <div class="page-meta">
-  <span>Section · Method</span>
-  <span>chicago_crime.db // method</span>
+  <span></span>
+  <span>chicago_crime.db / 2002–2025</span>
 </div>
 
-<!-- ROW 1: Codebook -->
-<div class="page-row">
-  <section class="page-section">
-    <div class="page-eyebrow">cleaning decisions</div>
-      <p>
-      <span class="placeholder">filter years</span>
-      The year 2001 has a lot of missing values, we therefore decided to filter our data set to range from 2002 - 2025
-    </p>
-    <p>
-      <span class="placeholder">invalid values</span>
-      When trying to standardise our data used for the algorithm we found the largest distance between two coordinate points to be ~ 600km. 
-      As we are trying to predict arrest probabilities within the city of Chicago, we decided to bound our coordinates to the city's limits.
-      We also dropped all instances of missing coordinates.
-    </p>
-    <p>
-      <span class="placeholder">typos in crime type</span>
-      The raw data included both <code>CRIM SEXUAL ASSAULT</code> and <code>CRIMINAL SEXUAL ASSAULT</code> as primary crime types. 
-      After having a closer look at the <a href="https://data.cityofchicago.org/widgets/c7ck-438e" target="_blank" rel="noopener noreferrer">Illinois Uniform Crime Reporting (IUCR) Codes</a>, we found no record of <code>CRIM SEXUAL ASSAULT</code>
-      being an additonal crime type and therefore renamed it to match the correct spelling.
-    </p>
-    <p>
-      <span class="placeholder">number of incidents</span>
-      We decided to keep crimes for which at least 5,000 incidents were reported. The variable <code>case_number</code> identifies every unique incident.
-    </p>
-    <p>
-      <span class="placeholder">collapsed dataframe</span>
-      One incident could have various registers. We collapsed the dataframe to have one row per incident. Our label variable, <code>arrest</code>, indicates whether at least one person was arrested for that incident.
-    </p>
-  </section>
-</div>
+<div class="page-eyebrow">codebook</div>
+{# ── Section nav ─────────────────────────────────────────── #}
+<nav class="codebook-toc" aria-label="Codebook contents">
+  <a href="#how-it-works">01 · how it works</a>
+  <a href="#app-inputs">02 · inputs</a>
+  <a href="#model-output">03 · output</a>
+  <a href="#feature-set">04 · features</a>
+  <a href="#source-variables">05 · source variables</a>
+  <a href="#engineered-variables">06 · engineered variables</a>
+  <a href="#notes">07 · notes</a>
+</nav>
 
-<!-- ROW 2: Cleaning -->
-<div class="page-row">
-  <section class="page-section">
-    <div class="page-eyebrow">knn logistic ridge from scratch</div>
+{# ── 1. How the algorithm works ──────────────────────────── #}
+<section id="how-it-works" class="page-row codebook-row">
+  <div class="page-section">
+    <h2>01 · how the algorithm works</h2>
     <p>
-      <span class="placeholder">our prediction</span>
-      We wanted to know the probability of being arrested for committing a specific crime (e.g., theft) on a given location within the City of Chicago,
-      at a given time and date.
+      The application uses a method called <strong>K-Nearest Neighbours with Logistic Ridge
+      Regression (KNN-LRR)</strong> to estimate the probability that a crime incident results in an
+      arrest. This section explains what that means in plain terms.
     </p>
-    <p>
-      <span class="placeholder">how we predict</span>
-      We use a k-nearest neighbours logistic ridge regression.
-      <ol>
-        <li>We select a <code>primary_type</code> and, thus, discard the rest of crime types.</li>
-        <li>We standardize 10 features:
-          <ul>
-            <li><code>latitude</code></li>
-            <li><code>longitude</code></li>
-            <li><code>hour_sin</code></li>
-            <li><code>hour_cos</code></li>
-            <li><code>day_of_week_sin</code></li>
-            <li><code>day_of_week_cos</code></li>
-            <li><code>month_sin</code></li>
-            <li><code>month_cos</code></li>
-            <li><code>day_of_year_sin</code></li>
-            <li><code>day_of_year_cos</code></li>
-          </ul>
-        <li>With the same parameters (mean, standard deviation), we standardise the query.</li>
-        <li>For a given standardised query, we find the k (from 1 to 100) nearest neighbours.</li>
-        <li>Once selected, we run a logistic ridge regression (<code>alpha=1.0, lr=0.1, n_iter=1000</code>) to estimate the probability of being arrested on the selected features.</li>
-      </ol>
-    </p>
-  </section>
 
-  <a href="#" class="page-jump" style="opacity: 0.5; cursor: not-allowed;">
-    <div class="page-jump-num">→ next</div>
+    <h3 class="codebook-subhead">step 1 · find similar past incidents</h3>
+    <p>
+      When you submit a query — specifying a crime type, a location on the map, a date, and a time —
+      the algorithm searches the historical Chicago crime dataset (2002–2025) for the
+      <strong>k</strong> incidents most similar to yours. Similarity is measured in terms of both
+      <strong>where</strong> and <strong>when</strong> the crime occurred. Incidents that happened nearby and at a
+      similar time of day, day of week, and time of year are considered closer neighbours.
+    </p>
+
+    <h3 class="codebook-subhead">step 2 · learn from those neighbours</h3>
+    <p>
+      Once the <strong>k</strong> nearest neighbours are identified, a logistic regression model is fitted
+      <strong>locally</strong> on just those <strong>k</strong> records. Logistic regression is a statistical method
+      that models the relationship between a set of input features and a binary outcome — in this
+      case, whether an arrest was made (True or False). A Ridge penalty is applied to prevent the
+      model from over-fitting to the small local sample.
+    </p>
+
+    <h3 class="codebook-subhead">step 3 · predict arrest probability</h3>
+    <p>
+      The locally-fitted model is then used to predict the probability of arrest for your specific
+      query point. The output is a number between 0 and 1: values close to 1 indicate a high
+      likelihood of arrest; values close to 0 indicate a low likelihood.
+    </p>
+
+    <h3 class="codebook-subhead">why local fitting?</h3>
+    <p>
+      Arrest patterns are not uniform across Chicago. They vary by neighbourhood, time of day, and
+      crime type. By fitting the regression only on nearby incidents, the algorithm adapts to the
+      local context of each query rather than applying a single global model to the entire city.
+    </p>
+
+    <h3 class="codebook-subhead">from-scratch vs. sklearn</h3>
+    <p>
+      The app offers two implementations of the same algorithm: a <strong>from-scratch</strong>
+      version built without machine learning libraries, and a
+      <strong>sklearn mirror</strong> that uses standard Python libraries as a validation benchmark.
+      Both should produce predictions within 5 percentage points of each other for the same inputs.
+    </p>
+  </div>
+
+  <a href="/algorithm" class="page-jump">
+    <div class="page-jump-num">→ see also</div>
     <div class="page-jump-title">algorithm</div>
     <div class="page-jump-desc">
-      How we operationalized the question — from raw records to a model that estimates deterrence.
+      Try the live KNN-LRR predictor with your own crime type, location, and time.
     </div>
-    <div class="page-jump-arrow">read ↗</div>
+    <div class="page-jump-arrow">run query →</div>
   </a>
-</div>
+</section>
 
-<!-- ROW 3: Future Steps -->
-<div class="page-row">
-  <section class="page-section">
-    <div class="page-eyebrow">Next steps</div>
-    <p>
-      <span class="placeholder">our next steps</span>
-      We would like to merge this dataset with other sources of information. For example, we would like add ethnic origin as an explanatory variable to
-      determine possible biases on arrests, reported types of crimes and number of registered incidents.
-    </p>
-    <p>
-      <span class="placeholder">what we can do better</span>
-      We find the k-nearest neighbours for every query. This approach might face some difficulties whith scaling: the bigger the dataframe, the longer the time of computation.
-      We could store previous results and show an approximation in case the user introduces a very similar query.
-    </p>
-  </section>
-</div>
+{# ── 2. App inputs ───────────────────────────────────────── #}
+<section id="app-inputs" class="codebook-section">
+  <h2 class="codebook-h2">02 · app inputs</h2>
+  <p class="codebook-p">
+    The six inputs exposed in the &ldquo;Will I be arrested?&rdquo; dashboard. Each maps to one or
+    more model features described in section 04.
+  </p>
+
+  <div class="cb-table-wrap">
+    <table class="cb-table">
+      <thead>
+        <tr><th>input</th><th>ui type</th><th>description</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">crime type</th>
+          <td>dropdown</td>
+          <td>
+            The category of crime being queried. Filters the dataset to records of that type before
+            the neighbour search is run. Must match one of the <code>primary_type</code> values in
+            the dataset (e.g. THEFT, BATTERY, NARCOTICS). The model is fitted only on the filtered
+            subset, so predictions are specific to that crime type. Crime types only include those
+            with more than 5000 cases. 
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">location (click map)</th>
+          <td>map pin</td>
+          <td>
+            The latitude and longitude of the query point, selected by clicking anywhere on the
+            Chicago map. Represents <em>where</em> the crime occurred. These coordinates are two of
+            the ten features used in distance computation. Only valid Chicago coordinates are
+            accepted (~41.6–42.0°N, ~−87.9 to −87.5°W).
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">date</th>
+          <td>date picker</td>
+          <td>
+            The calendar date of the query incident. Used to extract <code>month</code>,
+            <code>day_of_week</code>, and <code>day_of_year</code>, which are then cyclically
+            encoded as (sin, cos) pairs.
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">hour of day</th>
+          <td>dropdown</td>
+          <td>
+            The hour at which the crime occurred (24-hour clock, e.g. 12:00 = noon). Cyclically
+            encoded as (sin, cos) so that 23:00 and 00:00 are treated as close in time rather than
+            far apart. One of the eight temporal features fed into the distance metric.
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">algorithm</th>
+          <td>dropdown</td>
+          <td>
+            Which implementation to use: <strong>KNN (from scratch)</strong> or <strong>KNN (sklearn)</strong> — the validation mirror built with
+            standard Python libraries. Both use identical feature sets, standardisation, and
+            regularisation. Predictions should agree within |Δp| &lt; 0.05 for the same inputs.
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">k</th>
+          <td>slider</td>
+          <td>
+            The number of nearest neighbours to retrieve from the filtered dataset. Controls the
+            size of the local neighbourhood used to fit the logistic regression. Smaller <em>k</em>
+            = more sensitive to local patterns but higher variance; larger <em>k</em> = smoother
+            estimates but less local. The app default is <strong>25</strong>. Must be smaller than
+            the number of records available for the selected crime type.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# ── 3. Model output ─────────────────────────────────────── #}
+<section id="model-output" class="codebook-section">
+  <h2 class="codebook-h2">03 · model output</h2>
+  <p class="codebook-p">The model predicts this probability locally: a logistic ridge regression with parameters <code>alpha=1.0, lr=0.1, n_iter=1000</code> is fitted
+            on the <strong>k</strong> nearest neighbours of the query point, and the resulting model is used
+            to predict the probability for the query itself. Across the crime types (with more than 5000 cases) in the dataset,
+            approximately <strong>28%</strong> of incidents result in an arrest — but rates vary
+            substantially by crime type (e.g. narcotics arrests are disproportionately high; theft
+            and criminal damage are low). The locally-fitted model reflects these differences by
+            conditioning on crime type and spatiotemporal context.</p>
+
+  <div class="cb-table-wrap">
+    <table class="cb-table">
+      <thead>
+        <tr><th>output</th><th>range</th><th>description</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">arrest probability</th>
+          <td><code>0.0 – 1.0</code></td>
+          <td>
+            The estimated probability that a crime incident with the given characteristics (crime
+            type, location, date, and time) results in an arrest. Derived from the Boolean
+            <code>arrest</code> variable in the dataset (True if an arrest was made, False
+            otherwise). 
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# ── 4. KNN model feature set ───────────────────────────── #}
+<section id="feature-set" class="codebook-section">
+  <h2 class="codebook-h2">04 · knn model feature set</h2>
+  <p class="codebook-p">
+    The 10 features used as inputs to the distance computation. All are derived from the app inputs
+    (section 02) and standardised before use. The target variable
+    is <code>arrest</code>.
+  </p>
+
+  <div class="cb-table-wrap">
+    <table class="cb-table">
+      <thead>
+        <tr><th>variable</th><th>type</th><th>category</th><th>description</th><th>notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row"><code>latitude</code></th><td>float</td><td>spatial</td><td>WGS-84 latitude — spatial proximity feature</td><td>standardised</td></tr>
+        <tr><th scope="row"><code>longitude</code></th><td>float</td><td>spatial</td><td>WGS-84 longitude — spatial proximity feature</td><td>standardised</td></tr>
+        <tr><th scope="row"><code>hour_sin</code></th><td>float</td><td>temporal</td><td>sine encoding of hour (period = 24h)</td><td>avoids discontinuity at midnight (23:00 near 00:00)</td></tr>
+        <tr><th scope="row"><code>hour_cos</code></th><td>float</td><td>temporal</td><td>cosine encoding of hour (period = 24h)</td><td>paired with <code>hour_sin</code> to encode full circular position</td></tr>
+        <tr><th scope="row"><code>day_of_week_sin</code></th><td>float</td><td>temporal</td><td>sine encoding of day of week (period = 7 days)</td><td>avoids discontinuity at week boundary</td></tr>
+        <tr><th scope="row"><code>day_of_week_cos</code></th><td>float</td><td>temporal</td><td>cosine encoding of day of week (period = 7 days)</td><td>paired with <code>day_of_week_sin</code></td></tr>
+        <tr><th scope="row"><code>month_sin</code></th><td>float</td><td>temporal</td><td>sine encoding of month (period = 12 months)</td><td>avoids discontinuity at year boundary (Dec near Jan)</td></tr>
+        <tr><th scope="row"><code>month_cos</code></th><td>float</td><td>temporal</td><td>cosine encoding of month (period = 12 months)</td><td>paired with <code>month_sin</code></td></tr>
+        <tr><th scope="row"><code>day_of_year_sin</code></th><td>float</td><td>temporal</td><td>sine encoding of day of year (period = 365 days)</td><td>fine-grained seasonal signal; avoids Dec 31 / Jan 1 discontinuity</td></tr>
+        <tr><th scope="row"><code>day_of_year_cos</code></th><td>float</td><td>temporal</td><td>cosine encoding of day of year (period = 365 days)</td><td>paired with <code>day_of_year_sin</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# ── 5. Engineered variables ─────────────────────────────── #}
+<section id="engineered-variables" class="codebook-section">
+  <h2 class="codebook-h2">05 · engineered variables</h2>
+  <p class="codebook-p">
+    Created for the algorithm at runtime. The cleaned parquet contains only
+    source columns; all temporal and cyclic features are derived from the <code>date</code> string
+    column. Cyclic encoding maps each time unit to a (sin, cos) pair so distances wrap correctly at
+    period boundaries.
+  </p>
+
+  <div class="cb-table-wrap">
+    <table class="cb-table">
+      <thead>
+        <tr><th>variable</th><th>type</th><th>missing</th><th>description</th><th>notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row"><code>month</code></th><td>integer</td><td>no</td><td>calendar month of incident</td><td>1–12</td></tr>
+        <tr><th scope="row"><code>day</code></th><td>integer</td><td>no</td><td>day of month of incident</td><td>1–31</td></tr>
+        <tr><th scope="row"><code>hour</code></th><td>integer</td><td>no</td><td>hour of day of incident (24-hour clock)</td><td>0–23</td></tr>
+        <tr><th scope="row"><code>minute</code></th><td>integer</td><td>no</td><td>minute of hour of incident</td><td>0–59</td></tr>
+        <tr><th scope="row"><code>day_of_week</code></th><td>integer</td><td>no</td><td>day of week (Monday = 0, Sunday = 6)</td><td>0–6</td></tr>
+        <tr><th scope="row"><code>day_of_year</code></th><td>integer</td><td>no</td><td>day of year</td><td>1–366</td></tr>
+        <tr><th scope="row"><code>people_involved</code></th><td>integer</td><td>no</td><td>number of people linked to the same case number</td><td>derived pre-collapse; 1+ per incident</td></tr>
+        <tr><th scope="row"><code>hour_sin</code></th><td>float</td><td>no</td><td>sine encoding of hour (period = 24h)</td><td>sin(2π × hour / 24); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>hour_cos</code></th><td>float</td><td>no</td><td>cosine encoding of hour (period = 24h)</td><td>cos(2π × hour / 24); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>day_of_week_sin</code></th><td>float</td><td>no</td><td>sine encoding of day of week (period = 7 days)</td><td>sin(2π × day_of_week / 7); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>day_of_week_cos</code></th><td>float</td><td>no</td><td>cosine encoding of day of week (period = 7 days)</td><td>cos(2π × day_of_week / 7); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>month_sin</code></th><td>float</td><td>no</td><td>sine encoding of month (period = 12 months)</td><td>sin(2π × (month−1) / 12); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>month_cos</code></th><td>float</td><td>no</td><td>cosine encoding of month (period = 12 months)</td><td>cos(2π × (month−1) / 12); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>day_of_year_sin</code></th><td>float</td><td>no</td><td>sine encoding of day of year (period = 365 days)</td><td>sin(2π × (day_of_year−1) / 365); range [−1, 1]</td></tr>
+        <tr><th scope="row"><code>day_of_year_cos</code></th><td>float</td><td>no</td><td>cosine encoding of day of year (period = 365 days)</td><td>cos(2π × (day_of_year−1) / 365); range [−1, 1]</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# ── 6. Source variables ─────────────────────────────────── #}
+<section id="source-variables" class="codebook-section">
+  <h2 class="codebook-h2">06 · source variables</h2>
+  <p class="codebook-p">
+    All columns present in the cleaned parquet file, derived directly from the Chicago
+    Data Portal.
+  </p>
+
+  <div class="cb-table-wrap">
+    <table class="cb-table">
+      <thead>
+        <tr><th>variable</th><th>type</th><th>description</th><th>notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row"><code>id</code></th><td>integer</td><td>unique row identifier (Chicago Data Portal)</td><td>-</td></tr>
+        <tr><th scope="row"><code>case_number</code></th><td>string</td><td>CPD records division case number; unique per incident</td><td>e.g. <code>HZ100001</code></td></tr>
+        <tr><th scope="row"><code>date</code></th><td>datetime</td><td>date and time of incident occurrence</td><td>2002-01-01 to 2025-12-31</td></tr>
+        <tr><th scope="row"><code>block</code></th><td>string</td><td>partial address of incident (anonymised to block level)</td><td>e.g. <code>001XX N STATE ST</code></td></tr>
+        <tr><th scope="row"><code>iucr</code></th><td>string</td><td>Illinois Uniform Crime Reporting code</td><td>4-character code, e.g. <code>0110</code></td></tr>
+        <tr><th scope="row"><code>primary_type</code></th><td>category</td><td>top-level IUCR crime classification</td><td>35 distinct types; e.g. <code>THEFT</code>, <code>BATTERY</code></td></tr>
+        <tr><th scope="row"><code>description</code></th><td>category</td><td>secondary IUCR classification (subtype of <code>primary_type</code>)</td><td>e.g. <code>$500 AND UNDER</code></td></tr>
+        <tr><th scope="row"><code>location_description</code></th><td>category</td><td>type of location where incident occurred</td><td>e.g. <code>STREET</code>, <code>RESIDENCE</code>; ~0.4% missing</td></tr>
+        <tr><th scope="row"><code>arrest</code></th><td>boolean</td><td>whether an arrest was made (target variable)</td><td>True / False; ~28% True overall</td></tr>
+        <tr><th scope="row"><code>domestic</code></th><td>boolean</td><td>whether the incident was flagged as domestic violence</td><td>True / False</td></tr>
+        <tr><th scope="row"><code>beat</code></th><td>integer</td><td>CPD patrol beat (smallest geographic police unit)</td><td>integer code</td></tr>
+        <tr><th scope="row"><code>district</code></th><td>integer</td><td>CPD police district number</td><td>1–25; ~0.1% missing</td></tr>
+        <tr><th scope="row"><code>ward</code></th><td>integer</td><td>Chicago City Council ward number</td><td>1–50; ~0.2% missing</td></tr>
+        <tr><th scope="row"><code>community_area</code></th><td>integer</td><td>Chicago community area number</td><td>1–77; ~0.2% missing</td></tr>
+        <tr><th scope="row"><code>fbi_code</code></th><td>string</td><td>FBI Uniform Crime Reporting classification code</td><td>e.g. <code>06</code> (Larceny), <code>08B</code> (Simple Assault)</td></tr>
+        <tr><th scope="row"><code>year</code></th><td>integer</td><td>year of incident</td><td>2002–2025 (2001 excluded; high missingness)</td></tr>
+        <tr><th scope="row"><code>updated_on</code></th><td>datetime</td><td>date the record was last updated in the portal</td><td>~7% missing</td></tr>
+        <tr><th scope="row"><code>x_coordinate</code></th><td>float</td><td>Illinois State Plane Easting coordinate (feet)</td><td>~1% missing; Chicago-local CRS</td></tr>
+        <tr><th scope="row"><code>y_coordinate</code></th><td>float</td><td>Illinois State Plane Northing coordinate (feet)</td><td>~1% missing; Chicago-local CRS</td></tr>
+        <tr><th scope="row"><code>latitude</code></th><td>float</td><td>WGS-84 latitude (decimal degrees)</td><td>~41.6 to ~42.0; ~1% missing</td></tr>
+        <tr><th scope="row"><code>longitude</code></th><td>float</td><td>WGS-84 longitude (decimal degrees)</td><td>~−87.9 to ~−87.5; ~1% missing</td></tr>
+        <tr><th scope="row"><code>time</code></th><td>string</td><td>time component extracted from <code>date</code> (HH:MM:SS)</td><td>derived from <code>date</code> column during cleaning</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+
+{# ── 7. Notes ────────────────────────────────────────────── #}
+<section id="notes" class="codebook-section">
+  <h2 class="codebook-h2">07 · data notes &amp; known issues</h2>
+
+  <dl class="cb-notes">
+    <dt>year 2001 excluded</dt>
+    <dd>
+      A disproportionately high share of 2001 records are missing latitude/longitude, making
+      spatial features unreliable for that year. All modelling uses 2002 onward.
+    </dd>
+
+    <dt>collapse to incident level</dt>
+    <dd>
+      The raw source data is person-level (multiple rows per <code>case_number</code> for
+      multi-person incidents). We collapsed the data to one row per incident. 
+      For <code>arrest</code>, the <code>max</code> is taken (True if any person was arrested).
+    </dd>
+
+    <dt>invalid values</dt>
+    <dd>
+      When trying to standardise our data used for the algorithm we found the largest distance between two coordinates to be
+      ~ 600km. As we are trying to predict arrest probabilities within the city of Chicago, we decided to bound our coordinates
+      to the city's limits. We also dropped all instances of missing coordinates.
+    </dd>
+
+    <dt>streamlining of crime types</dt>
+    <dd>
+      The raw data included both <code>CRIM SEXUAL ASSAULT</code> and <code>CRIMINAL SEXUAL ASSAULT</code> as primary crime types. 
+      After having a closer look at the <a href="https://data.cityofchicago.org/widgets/c7ck-438e" target="_blank">Illinois Uniform Crime Reporting (IUCR) Codes</a>, we found no record of <code>CRIM SEXUAL ASSAULT</code>
+      being an additonal crime type and therefore renamed it to match the correct spelling.
+    </dd>
+
+    <dt>minimum number of incidents per crime type</dt>
+    <dd>
+      We decided to keep crimes for which at least 5,000 incidents were reported. 
+      The variable <code>case_number</code> identifies every unique incident.
+    </dd>
+
+    <dt>local parquet vs. pipeline output</dt>
+    <dd>
+      The locally cached parquet (<code>data/cleaned/chicago_crimes_cleaned.parquet</code>)
+      contains source columns only. Engineered columns (temporal + cyclic) are generated at
+      runtime by <code>preprocess_data()</code> and are not stored in the parquet.
+    </dd>
+
+    <dt>cyclic encoding rationale</dt>
+    <dd>
+      Raw hour/month/day values cannot be used directly in Euclidean distance because the scale
+      wraps around (e.g. hour 23 and hour 0 are 1 unit apart, not 23). Encoding each unit as
+      (sin, cos) preserves this circularity in Euclidean space.
+    </dd>
+
+    <dt>missing coordinates</dt>
+    <dd>
+      ~1% of records lack latitude/longitude. These are dropped before spatial modelling
+      (<code>NearestNeighbors</code> and haversine distance require valid coordinates).
+    </dd>
+  </dl>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ──────────────────────────────────────────────────────────
+     Codebook page — page-specific overrides only.
+     Reuses .page-eyebrow, .page-meta, .page-row, .page-section,
+     .page-jump from main.css.
+     ────────────────────────────────────────────────────────── */
+
+  /* Hero header */
+  .codebook-header {
+    max-width: 1350px;
+    margin: 0 auto 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  .codebook-title {
+    font-family: var(--font-display);
+    font-size: 3.4rem;
+    font-weight: 600;
+    font-variation-settings: "opsz" 72, "SOFT" 30, "WONK" 1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .codebook-lede {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 14, "SOFT" 50, "WONK" 0;
+    font-weight: 400;
+    font-size: 1.4rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    max-width: 50rem;
+  }
+
+  /* Inline TOC — terminal style */
+  .codebook-toc {
+    max-width: 1350px;
+    margin: 0 auto 3rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2rem;
+    padding: 1rem 0;
+    border-top: 1px dashed var(--border);
+    border-bottom: 1px dashed var(--border);
+  }
+  .codebook-toc a {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: lowercase;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 0.25rem 0;
+    transition: color 0.2s;
+  }
+  .codebook-toc a:hover { color: var(--accent); }
+
+  /* Inline subheads inside the prose-heavy first row */
+  .codebook-subhead {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: lowercase;
+    color: var(--accent);
+    margin: 1.75rem 0 0.4rem;
+  }
+  .codebook-subhead::before { content: '> '; color: var(--accent); }
+
+  /* Sections that are NOT page-row (the table-heavy ones) */
+  .codebook-section {
+    max-width: 1350px;
+    margin: 0 auto 4rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px dashed var(--border);
+    scroll-margin-top: 1rem;
+  }
+  .codebook-section:last-child { border-bottom: none; }
+
+  .codebook-h2 {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-transform: lowercase;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .codebook-p {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 14, "SOFT" 50, "WONK" 0;
+    font-weight: 400;
+    font-size: 1.2rem;
+    line-height: 1.75;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    max-width: 55rem;
+  }
+
+  /* Tighter prose inside the page-row */
+  .codebook-row .page-section h2 { margin-bottom: 1rem; }
+  .codebook-row .page-section em { color: var(--accent); font-style: normal; }
+  .codebook-row .page-section strong { color: var(--text); font-weight: 700; }
+
+  /* ── Tables — terminal forensic ─────────────────────────── */
+  .cb-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-card);
+  }
+  .cb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--text-muted);
+  }
+  .cb-table thead th {
+    background: var(--bg-elev);
+    color: var(--accent);
+    font-weight: 700;
+    text-align: left;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .cb-table tbody td,
+  .cb-table tbody th {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px dashed var(--border);
+    line-height: 1.55;
+  }
+  .cb-table tbody tr:last-child td,
+  .cb-table tbody tr:last-child th { border-bottom: none; }
+  .cb-table tbody tr:hover { background: rgba(34, 197, 94, 0.04); }
+  .cb-table tbody th[scope="row"] {
+    color: var(--text);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .cb-table code {
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 0.1em 0.4em;
+    border-radius: 2px;
+    font-size: 0.92em;
+  }
+  .cb-table em { color: var(--accent); font-style: normal; }
+  .cb-table strong { color: var(--text); font-weight: 700; }
+
+  /* Inline code in prose (not in tables) */
+  .codebook-section p code,
+  .codebook-row p code,
+  .cb-notes code {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 0.1em 0.4em;
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+  }
+
+  /* Notes definition list */
+  .cb-notes { margin-top: 0.5rem; }
+  .cb-notes dt {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: lowercase;
+    color: var(--accent);
+    margin-top: 1.5rem;
+  }
+  .cb-notes dt::before { content: '> '; }
+  .cb-notes dd {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 14, "SOFT" 50, "WONK" 0;
+    font-weight: 400;
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    margin: 0.4rem 0 0 1.25rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--border);
+    max-width: 55rem;
+  }
+
+  @media (max-width: 900px) {
+    .codebook-title { font-size: 2.4rem; }
+    .codebook-toc { gap: 0.5rem 1.5rem; }
+    .cb-table { font-size: 0.8rem; }
+    .cb-table thead th,
+    .cb-table tbody td,
+    .cb-table tbody th { padding: 0.6rem 0.7rem; }
+  }
+</style>
 {% endblock %}

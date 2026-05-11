@@ -1,0 +1,12 @@
+- At the onset of project, finalized decision for the dataset our group would use.
+    - Based on our common interests in social and economic policy, demographics (race, gender, etc.), and incarceration, among others, narrowed down potential datasets based on the criteria for an appropriate dataset — 20+ features, abundant observations, and potential research questions we could feasibly answer using the data. Among the datasets we proposed, those which satisfied this criteria were few, so I proposed and pitched the Chicago Crimes Dataset (2001 - present) to our group, which we ultimately ended up using for our project. 
+- Guided group in data cleaning steps
+    - Based on prior research experience, outlined key steps for data processing, such as making decisions regarding NA's, ensuring consistency across observations, and coding dates and times, among others.
+- Created visualizations based on data
+    - I first created a set of preliminary visualizations based on research questions we were curious about probing as a group. As the first half of the semester progressed, I continued to produce new visualizations and refine existing ones until interesting and statistically significant trends emerged. These visualizations became the basis for our final application, which would ultimately exploit the patterns we found in the existing data. As a group, we then decided on an appropriate ML algorithm which incorporated the patterns we wanted to dig deeper into in order to predict our outcome of interest (arrest rate).
+    - In the process of creating these visualizations, I pointed to interesting patterns in the data and suggested ideas for potential applications based on them. I also highlighted any discrepancies I observed in our preliminary data cleaning process to our group, which other members helped to address and allowed us to refine any loose ends in our data cleaning process.
+- Drafted a Max Heap algorithm, which would be incorporated into our final prediction.
+    - Assisted another team member (Gustavo) in the creation of a KNN algorithm, which would manifest in our final product.
+- Wrote up text for final application
+    - Specifically, the "what our exploration revealed," trends dashboard, and dashboards pages.
+    - Guided group in finalizing UI by providing examples of interactive crime maps used in academic research and referencing important details to include. Served as editor for final text. 

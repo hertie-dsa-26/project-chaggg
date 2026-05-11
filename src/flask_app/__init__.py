@@ -9,7 +9,14 @@ from flask import Flask, render_template, jsonify, request
 
 from .data import load_crime_data
 from .load_crime_artifacts import load_knn_arrays
+from .estimators import (
+    build_crime_type_slug_map,
+    estimate_arrest_probability_naive_community_area,
+    load_community_area_polygons,
+    precompute_naive_stats,
+)
 from algorithms.knn_lrr import predict_arrest_probability
+from algorithms.knn_sklearn import predict_arrest_probability_sklearn
 
 
 def create_app():
@@ -29,6 +36,19 @@ def create_app():
     print(f"{'='*50}\n")
 
     app.config["CRIME_DF"] = crime_df
+    app.config["CRIME_TYPE_SLUG_MAP"] = build_crime_type_slug_map(crime_df)
+
+    print("Precomputing naive community area stats...")
+    app.config["NAIVE_STATS"] = precompute_naive_stats(crime_df)
+    print("Naive stats ready.")
+
+    try:
+        community_area_polygons = load_community_area_polygons()
+        print(f"COMMUNITY AREA POLYGONS LOADED: {len(community_area_polygons)} areas")
+    except FileNotFoundError:
+        community_area_polygons = []
+        print("WARNING: Community area polygons not found.")
+    app.config["COMMUNITY_AREA_POLYGONS"] = community_area_polygons
 
     # Load precomputed KNN artifacts
     try:
@@ -112,11 +132,6 @@ def create_app():
         except (KeyError, TypeError, ValueError) as e:
             return jsonify({"error": f"Invalid input: {e}"}), 400
 
-        if algorithm == "naive":
-            return jsonify({"error": "Naive baseline not implemented yet."}), 501
-        if algorithm != "knn":
-            return jsonify({"error": f"Unknown algorithm: {algorithm}"}), 400
-
         artifacts = app.config["KNN_ARTIFACTS"]
         if crime_type not in artifacts:
             return jsonify({
@@ -135,10 +150,30 @@ def create_app():
         if date.year != 2026:
             return jsonify({"error": "date must be in 2026"}), 400
 
-        # Build raw query vector — must match clean.py's add_cyclical_time_features
         day_of_week = date.weekday()
         month = date.month
         day_of_year = date.timetuple().tm_yday
+
+        if algorithm == "naive_community_area":
+            probability, derived = estimate_arrest_probability_naive_community_area(
+                stats=app.config["NAIVE_STATS"],
+                crime_type_slug=crime_type,
+                lat=lat,
+                lon=lon,
+                hour=hour,
+                day_of_week=day_of_week,
+                month=month,
+                polygons=app.config["COMMUNITY_AREA_POLYGONS"],
+                slug_map=app.config["CRIME_TYPE_SLUG_MAP"],
+            )
+            return jsonify({
+                "probability": probability,
+                "algorithm": "naive_community_area",
+                "k": None,
+                "crime_type": crime_type,
+                "n_total": len(app.config["CRIME_DF"]),
+                "derived": derived,
+            })
 
         def _sincos(value, period):
             angle = 2 * _math.pi * value / period
@@ -157,8 +192,13 @@ def create_app():
             doy_sin, doy_cos,
         ], dtype=float)
 
+        predictor = (
+            predict_arrest_probability_sklearn
+            if algorithm == "knn_sklearn"
+            else predict_arrest_probability
+        )
         try:
-            probability = predict_arrest_probability(
+            probability = predictor(
                 artifact=artifacts[crime_type],
                 query_raw=query_raw,
                 k=k,
@@ -168,12 +208,12 @@ def create_app():
 
         return jsonify({
             "probability": probability,
+            "algorithm": algorithm,
             "k": k,
             "crime_type": crime_type,
             "n_total": int(artifacts[crime_type]["label"].shape[0]),
             "derived": {"day_of_week": day_of_week, "day_of_year": day_of_year},
         })
-
     
     @app.route("/dashboards")
     def dashboards():

@@ -358,14 +358,14 @@
         </select>
       </div>
 
-      <div class="form-row">
-        <label for="algorithm">Algorithm</label>
-        <select id="algorithm">
-          <option value="knn">KNN (from scratch)</option>
-          <option value="naive" disabled>Naive probability (coming soon)</option>
-          <option value="dbscan" disabled>DBSCAN (coming soon)</option>
-        </select>
-      </div>
+    <div class="form-row">
+      <label for="algorithm">Algorithm</label>
+      <select id="algorithm">
+        <option value="knn">KNN (from scratch)</option>
+        <option value="naive_community_area">Naive Community Area</option>
+        <option value="knn_sklearn">KNN sklearn</option>
+      </select>
+    </div>
 
       <div class="form-row">
         <label for="k">k = <span id="k-display">25</span></label>
@@ -455,6 +455,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // ---- k slider live readout -----------------------------------------------
   const kInput = document.getElementById('k');
   const kDisplay = document.getElementById('k-display');
+  const kRow = kInput.closest('.form-row');
   kInput.addEventListener('input', () => { kDisplay.textContent = kInput.value; });
 
   // ---- Predict button state management -------------------------------------
