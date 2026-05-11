@@ -151,10 +151,19 @@
   const COLOR_TOOLTIP_BORDER = '#5a9b6e';
   const COLOR_TOOLTIP_TEXT = '#e6edf3';
 
-  function initChart(id, type, labels, data, label) {
+  function initChart(id, type, labels, data, label, selectedYear = null) {
     const ctx = document.getElementById(id).getContext('2d');
     const isLine = type === 'line';
     const color = isLine ? COLOR_LINE : COLOR_BAR;
+
+    // For the year chart, highlight the selected year's point
+    const pointRadii = (isLine && selectedYear && selectedYear !== 'ALL')
+      ? labels.map(l => String(l) === String(selectedYear) ? 8 : 3)
+      : (isLine ? 3 : 0);
+
+    const pointColors = (isLine && selectedYear && selectedYear !== 'ALL')
+      ? labels.map(l => String(l) === String(selectedYear) ? '#ffffff' : color)
+      : color;
 
     return new Chart(ctx, {
       type: type,
@@ -269,17 +278,23 @@
     const msg = document.getElementById('loadingMsg');
     msg.style.display = 'inline';
 
-    fetch(`/api/temporal?type=${encodeURIComponent(type)}&year=${encodeURIComponent(year)}`)
-      .then(r => r.json())
-      .then(data => {
+    // Always fetch full year data unfiltered for the year chart
+    const yearFetch = fetch(`/api/temporal?type=${encodeURIComponent(type)}&year=ALL`).then(r => r.json());
+    const mainFetch = fetch(`/api/temporal?type=${encodeURIComponent(type)}&year=${encodeURIComponent(year)}`).then(r => r.json());
+
+    Promise.all([yearFetch, mainFetch])
+      .then(([yearData, data]) => {
         msg.style.display = 'none';
 
-        if (yearChart) yearChart.destroy();
-        yearChart = initChart('yearChart', 'line', data.by_year.years, data.by_year.counts, 'Incidents');
+      // Year chart always uses full unfiltered data, but highlights selected year
+      if (yearChart) yearChart.destroy();
+      yearChart = initChart('yearChart', 'line', yearData.by_year.years, yearData.by_year.counts, 'Incidents', year);
 
-        if (monthChart) monthChart.destroy();
-        const monthLabel = year !== 'ALL' ? 'Incidents' : 'Avg Incidents';
-        monthChart = initChart('monthChart', 'bar', monthNames, data.by_month.counts, monthLabel);
+      // Rest uses filtered data as before
+      if (monthChart) monthChart.destroy();
+      const monthLabel = year !== 'ALL' ? 'Incidents' : 'Avg Incidents';
+      monthChart = initChart('monthChart', 'bar', monthNames, data.by_month.counts, monthLabel);
+
 
         renderHeatmap(data.heatmap.matrix, data.heatmap.days, data.heatmap.hours);
 
