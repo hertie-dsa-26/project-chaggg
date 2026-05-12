@@ -18,7 +18,7 @@ from .estimators import (
 from algorithms.knn_lrr import predict_arrest_probability
 from algorithms.knn_sklearn import predict_arrest_probability_sklearn
 
-#defining valid algorithms before create_app for later test
+# Define valid algorithms before create_app for later tests.
 VALID_ALGORITHMS = {"naive_community_area", "knn_lrr", "knn_sklearn"}
 
 def create_app():
