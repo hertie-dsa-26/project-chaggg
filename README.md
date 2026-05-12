@@ -58,7 +58,9 @@ After successful download skip straight to **Step 4**.
 #### Option B — Run the full data pipeline
 
 This will download the raw data from the Chicago Data Portal, clean it, and
-generate all precomputed artifacts. It may take several minutes.
+generate all precomputed artifacts. For the download to be possible, you will have to sign up
+to the Chicago Data Portal and request an App Token, which then has to be filled into the `config.py ` script. 
+The full data pipeline may take several minutes.
 
 ```
 uv run python -m scripts.main

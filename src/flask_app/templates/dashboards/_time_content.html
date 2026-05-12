@@ -112,6 +112,10 @@
   <div class="controls">
     <label for="crimeType">Crime Type &gt;</label>
     <select id="crimeType"><option value="ALL">All Types</option></select>
+
+    <label for="yearSelect">Year &gt;</label>
+    <select id="yearSelect"><option value="ALL">All Years</option></select>
+
     <span class="loading" id="loadingMsg" style="display:none">// loading...</span>
   </div>
 
@@ -147,10 +151,19 @@
   const COLOR_TOOLTIP_BORDER = '#5a9b6e';
   const COLOR_TOOLTIP_TEXT = '#e6edf3';
 
-  function initChart(id, type, labels, data, label) {
+  function initChart(id, type, labels, data, label, selectedYear = null) {
     const ctx = document.getElementById(id).getContext('2d');
     const isLine = type === 'line';
     const color = isLine ? COLOR_LINE : COLOR_BAR;
+
+    // For the year chart, highlight the selected year's point
+    const pointRadii = (isLine && selectedYear && selectedYear !== 'ALL')
+      ? labels.map(l => String(l) === String(selectedYear) ? 8 : 3)
+      : (isLine ? 3 : 0);
+
+    const pointColors = (isLine && selectedYear && selectedYear !== 'ALL')
+      ? labels.map(l => String(l) === String(selectedYear) ? '#ffffff' : color)
+      : color;
 
     return new Chart(ctx, {
       type: type,
@@ -261,20 +274,27 @@
     table.innerHTML = html;
   }
 
-  function loadData(type) {
+  function loadData(type, year) {
     const msg = document.getElementById('loadingMsg');
     msg.style.display = 'inline';
 
-    fetch(`/api/temporal?type=${encodeURIComponent(type)}`)
-      .then(r => r.json())
-      .then(data => {
+    // Always fetch full year data unfiltered for the year chart
+    const yearFetch = fetch(`/api/temporal?type=${encodeURIComponent(type)}&year=ALL`).then(r => r.json());
+    const mainFetch = fetch(`/api/temporal?type=${encodeURIComponent(type)}&year=${encodeURIComponent(year)}`).then(r => r.json());
+
+    Promise.all([yearFetch, mainFetch])
+      .then(([yearData, data]) => {
         msg.style.display = 'none';
 
-        if (yearChart) yearChart.destroy();
-        yearChart = initChart('yearChart', 'line', data.by_year.years, data.by_year.counts, 'Incidents');
+      // Year chart always uses full unfiltered data, but highlights selected year
+      if (yearChart) yearChart.destroy();
+      yearChart = initChart('yearChart', 'line', yearData.by_year.years, yearData.by_year.counts, 'Incidents', year);
 
-        if (monthChart) monthChart.destroy();
-        monthChart = initChart('monthChart', 'bar', monthNames, data.by_month.counts, 'Avg Incidents');
+      // Rest uses filtered data as before
+      if (monthChart) monthChart.destroy();
+      const monthLabel = year !== 'ALL' ? 'Incidents' : 'Avg Incidents';
+      monthChart = initChart('monthChart', 'bar', monthNames, data.by_month.counts, monthLabel);
+
 
         renderHeatmap(data.heatmap.matrix, data.heatmap.days, data.heatmap.hours);
 
@@ -283,8 +303,18 @@
           data.crime_types.forEach(t => {
             if (!sel.querySelector(`option[value="${t}"]`)) {
               const opt = document.createElement('option');
-              opt.value = t;
-              opt.textContent = t;
+              opt.value = t; opt.textContent = t;
+              sel.appendChild(opt);
+            }
+          });
+        }
+
+        if (data.years) {
+          const sel = document.getElementById('yearSelect');
+          data.years.forEach(y => {
+            if (!sel.querySelector(`option[value="${y}"]`)) {
+              const opt = document.createElement('option');
+              opt.value = y; opt.textContent = y;
               sel.appendChild(opt);
             }
           });
@@ -296,10 +326,15 @@
       });
   }
 
-  document.getElementById('crimeType').addEventListener('change', (e) => {
-    loadData(e.target.value);
-  });
+  // Initial load
+  loadData('ALL', 'ALL');
 
-  loadData('ALL');
+  // Update when either dropdown changes
+  document.getElementById('crimeType').addEventListener('change', (e) => {
+    loadData(e.target.value, document.getElementById('yearSelect').value);
+  });
+  document.getElementById('yearSelect').addEventListener('change', (e) => {
+    loadData(document.getElementById('crimeType').value, e.target.value);
+  });
 })();
 </script>
