@@ -297,6 +297,18 @@ footer {
     max-width: 45rem;
 }
 
+.page-list {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 14, "SOFT" 50, "WONK" 0;
+    font-weight: 400;
+    font-size: 1.3rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    max-width: 45rem;
+    padding-left: 1.5rem;
+}
+
 .page-section .placeholder {
     display: inline-block;
     background: rgba(196, 69, 54, 0.12);
