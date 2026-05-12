@@ -111,11 +111,6 @@ def create_app():
             "dashboards/algorithm.html",
             crime_types=crime_types,
         )
-    
-    @app.route("/codebook")
-    def codebook():
-        return render_template(
-            "codebook.html")
 
     @app.route("/api/predict", methods=["POST"])
     def api_predict():
