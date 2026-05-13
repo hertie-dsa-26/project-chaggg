@@ -1,8 +1,3 @@
-import pandas as pd
-import numpy as np
-import sys, os
-
-sys.path.insert(0, os.path.abspath('..')) 
 from scripts.utils import load_data
 
 # --- Preprocess data

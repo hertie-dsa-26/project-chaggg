@@ -5,12 +5,8 @@ Single source of truth for the algorithm. Imported by:
   - src/crime_knn.py           (the CLI demo)
 """
 from __future__ import annotations
-
-import sys, os
 import numpy as np
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from max_heap import MaxHeap, euclidean_distance
+from algorithms.max_heap import MaxHeap, euclidean_distance
 
 
 # Feature column order — must match precompute_knn_arrays.py and clean.py

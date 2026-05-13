@@ -1,10 +1,6 @@
 """Unit tests for scripts.estimators.compute_arrest_probability."""
-
-import math
 import unittest
-
 import pandas as pd
-
 from scripts.estimators import compute_arrest_probability
 
 
