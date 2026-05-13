@@ -10,7 +10,7 @@ Usage:
 import pandas as pd
 import numpy as np
 import os
-from config import *
+from scripts.config import *
 
 # ── Loading ───────────────────────────────────────────────────────────────────
 def load_raw_data():

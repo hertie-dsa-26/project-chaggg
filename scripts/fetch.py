@@ -10,7 +10,7 @@ import pandas as pd
 import time
 import json
 import os
-from config import *
+from scripts.config import *
 
 # ── Progress Tracking ─────────────────────────────────────────────────────────
 def load_progress():

@@ -1,9 +1,5 @@
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import json
 import random
-import pandas as pd
 from src.flask_app.data import load_crime_data
 
 df = load_crime_data()

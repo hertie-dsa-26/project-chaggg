@@ -6,7 +6,7 @@ Run with:  python -m pytest test_max_heap.py -v
 
 import math
 import pytest
-from max_heap import MaxHeap, knn_regression, euclidean_distance
+from algorithms.max_heap import MaxHeap, knn_regression, euclidean_distance
 
 
 # ===========================================================================

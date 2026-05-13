@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from scripts.precompute_knn_arrays import precompute_one, FEATURE_COLS, LABEL_COL
+from scripts.precompute_knn_arrays import precompute_one, FEATURE_COLS
 
 
 def make_fake_df(n_per_type: int = 100, crime_types=("THEFT", "BATTERY")):

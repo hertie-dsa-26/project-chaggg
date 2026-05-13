@@ -15,7 +15,7 @@ worst_distance() O(1)      — root is always the maximum
 get_all()        O(k)      — copies the internal list
 """
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 
 class MaxHeap:
